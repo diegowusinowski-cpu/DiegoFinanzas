@@ -18,9 +18,9 @@ interface RadioChipsProps<V extends string> {
 }
 
 const TONES = {
-  neutral: 'peer-checked:bg-ink peer-checked:text-white',
-  income: 'peer-checked:bg-income peer-checked:text-white',
-  expense: 'peer-checked:bg-expense peer-checked:text-white',
+  neutral: 'peer-checked:bg-action peer-checked:text-fg-on-action',
+  income: 'peer-checked:bg-iris-gleam peer-checked:text-void',
+  expense: 'peer-checked:bg-orchid-bloom peer-checked:text-void',
 }
 
 /** Grupo de opciones excluyentes basado en radios nativos (accesible por teclado). */
@@ -36,8 +36,8 @@ export function RadioChips<V extends string>({
   const name = useId()
   return (
     <fieldset className="min-w-0">
-      <legend className="mb-1.5 text-sm font-semibold text-ink-soft">{legend}</legend>
-      <div className={cx(layout === 'segmented' ? 'grid grid-flow-col auto-cols-fr gap-2 rounded-full bg-sunken p-1' : 'flex flex-wrap gap-2')}>
+      <legend className="type-eyebrow mb-2">{legend}</legend>
+      <div className={cx(layout === 'segmented' ? 'grid grid-flow-col auto-cols-fr gap-2 rounded-pill border border-line bg-void p-1' : 'flex flex-wrap gap-2')}>
         {options.map((option) => (
           <label key={option.value} className="relative">
             <input
@@ -50,8 +50,8 @@ export function RadioChips<V extends string>({
             />
             <span
               className={cx(
-                'flex min-h-11 cursor-pointer items-center justify-center rounded-full px-4 text-sm font-semibold transition peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ink',
-                layout === 'segmented' ? 'text-ink-soft' : 'border border-line bg-canvas text-ink-soft',
+                'flex min-h-11 cursor-pointer items-center justify-center rounded-pill px-4 text-body-sm transition-colors duration-200 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-pure',
+                layout === 'segmented' ? 'text-fg-soft' : 'border border-line bg-glass text-fg-heading hover:bg-glass-strong',
                 TONES[tone(option.value)],
               )}
             >
@@ -61,7 +61,7 @@ export function RadioChips<V extends string>({
         ))}
       </div>
       {error ? (
-        <p role="alert" className="mt-1.5 text-sm font-medium text-expense">
+        <p role="alert" className="mt-1.5 text-body-sm text-danger">
           {error}
         </p>
       ) : null}

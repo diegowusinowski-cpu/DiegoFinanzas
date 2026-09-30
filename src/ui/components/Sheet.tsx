@@ -58,7 +58,7 @@ export function Sheet({ open, title, onClose, children }: SheetProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
       <div
-        className="absolute inset-0 animate-fade bg-ink/40 backdrop-blur-[2px]"
+        className="absolute inset-0 animate-fade bg-void/60 backdrop-blur-sm"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -68,18 +68,18 @@ export function Sheet({ open, title, onClose, children }: SheetProps) {
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="relative flex max-h-[92dvh] w-full max-w-md animate-sheet flex-col rounded-t-[2rem] bg-surface outline-none"
+        className="relative flex max-h-[92dvh] w-full max-w-md animate-sheet flex-col rounded-t-tile border-t border-line bg-surface outline-none"
       >
-        <div className="mx-auto mt-2.5 h-1.5 w-10 rounded-full bg-line" aria-hidden="true" />
+        <div className="mx-auto mt-2.5 h-1 w-10 rounded-pill bg-surface-hover" aria-hidden="true" />
         <div className="flex items-center justify-between px-6 pt-4 pb-2">
-          <h2 id={titleId} className="text-xl font-bold tracking-tight">
+          <h2 id={titleId} className="type-title">
             {title}
           </h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="grid size-10 place-items-center rounded-full bg-sunken text-ink-soft transition hover:bg-line"
+            className="grid size-10 place-items-center rounded-pill bg-glass text-fg-soft transition-colors duration-200 hover:bg-glass-strong"
           >
             <Icon name="close" size={18} />
           </button>

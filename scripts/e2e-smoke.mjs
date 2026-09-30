@@ -107,6 +107,8 @@ async function run(name, device, { mockRate } = {}) {
   await reminder.getByRole('button', { name: 'Guardar recordatorio' }).click()
   await page.getByText('Cuota el 6 de Octubre').waitFor()
   await page.screenshot({ path: `${OUT}/${name}-2-dashboard-completo.png`, fullPage: true })
+  await page.evaluate(() => window.scrollTo(0, 0))
+  await page.screenshot({ path: `${OUT}/${name}-2b-dashboard-pantalla.png` })
   log(`[${name}] recordatorio creado`)
 
   // Navegación
@@ -151,7 +153,8 @@ async function run(name, device, { mockRate } = {}) {
 
 try {
   await run('android-360', { ...devices['Pixel 5'], viewport: { width: 360, height: 780 } })
-  await run('iphone-390', devices['iPhone 13'], { mockRate: true })
+  await run('iphone-390', { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }, { mockRate: true })
+  await run('iphone-375', { ...devices['iPhone X'], viewport: { width: 375, height: 812 } }, { mockRate: true })
   await run('escritorio', { viewport: { width: 1280, height: 800 } }, { mockRate: true })
   console.log('\nE2E OK')
 } finally {

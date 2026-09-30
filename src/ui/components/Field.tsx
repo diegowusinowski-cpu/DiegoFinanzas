@@ -16,12 +16,12 @@ export function Field({ label, error, hint, prefix, children }: FieldProps) {
   const hasMessage = Boolean(error) || Boolean(hint)
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-semibold text-ink-soft">
+      <label htmlFor={id} className="type-eyebrow">
         {label}
       </label>
       <div className="relative">
         {prefix ? (
-          <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-2xl font-bold text-muted">
+          <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center font-display text-title font-light text-fg-soft">
             {prefix}
           </span>
         ) : null}
@@ -32,11 +32,11 @@ export function Field({ label, error, hint, prefix, children }: FieldProps) {
         } as Partial<ReactElement<Record<string, unknown>>['props']>)}
       </div>
       {error ? (
-        <p id={messageId} role="alert" className="text-sm font-medium text-expense">
+        <p id={messageId} role="alert" className="text-body-sm text-danger">
           {error}
         </p>
       ) : hint ? (
-        <p id={messageId} className="text-sm text-muted">
+        <p id={messageId} className="text-body-sm text-fg-soft">
           {hint}
         </p>
       ) : null}
@@ -45,4 +45,4 @@ export function Field({ label, error, hint, prefix, children }: FieldProps) {
 }
 
 export const inputClass =
-  'min-h-13 w-full rounded-control border border-line bg-canvas px-4 text-base text-ink placeholder:text-muted/70 outline-none transition focus:border-ink focus:bg-surface aria-[invalid=true]:border-expense'
+  'min-h-13 w-full rounded-control border border-line bg-void px-4 text-body text-fg outline-none transition-colors duration-200 focus:border-pure aria-[invalid=true]:border-danger'

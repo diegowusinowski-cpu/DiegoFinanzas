@@ -23,34 +23,34 @@ export function DashboardScreen({ onNewTransaction, onNewReminder, onSeeAll }: D
   const loading = finance.status === 'loading'
 
   return (
-    <div className="flex flex-col gap-7 animate-rise">
+    <div className="flex flex-col gap-9 animate-rise">
       <header className="flex items-center justify-between pt-safe">
         <Wordmark />
-        {profile ? <p className="text-sm font-medium text-muted">Hola, {profile.displayName}</p> : null}
+        {profile ? <p className="text-body-sm text-fg-soft">Hola, {profile.displayName}</p> : null}
       </header>
 
       <BalanceCard balance={finance.balance} loading={loading} />
 
       <section aria-label="Acciones principales" className="grid grid-cols-2 gap-3">
-        <ActionButton label="Gasto" icon="arrow-up" onClick={() => onNewTransaction('EXPENSE')} disabled={loading} />
-        <ActionButton label="Ingreso" icon="arrow-down" onClick={() => onNewTransaction('INCOME')} disabled={loading} />
+        <ActionButton tone="orchid" label="Gasto" icon="arrow-up" onClick={() => onNewTransaction('EXPENSE')} disabled={loading} />
+        <ActionButton tone="iris" label="Ingreso" icon="arrow-down" onClick={() => onNewTransaction('INCOME')} disabled={loading} />
       </section>
 
       <section aria-labelledby="reminders-title" className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <h2 id="reminders-title" className="text-lg font-bold tracking-tight">
+          <h2 id="reminders-title" className="type-heading">
             Recordatorios
           </h2>
           <button
             type="button"
             onClick={onNewReminder}
-            className="min-h-10 rounded-full px-3 text-sm font-semibold text-ink underline underline-offset-4"
+            className="type-eyebrow min-h-10 shrink-0 whitespace-nowrap rounded-pill px-3 text-fg underline underline-offset-4 transition-colors duration-200 hover:text-fg-heading"
           >
             + Agregar
           </button>
         </div>
         {loading ? (
-          <Skeleton className="h-28 rounded-card" />
+          <Skeleton className="h-32 rounded-tile" />
         ) : finance.reminders.length === 0 ? (
           <Card>
             <EmptyState icon="bell" title="Sin recordatorios">
@@ -74,22 +74,22 @@ export function DashboardScreen({ onNewTransaction, onNewReminder, onSeeAll }: D
 
       <section aria-labelledby="latest-title" className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <h2 id="latest-title" className="text-lg font-bold tracking-tight">
+          <h2 id="latest-title" className="type-heading">
             Últimos movimientos
           </h2>
           {finance.history.length > 3 ? (
             <button
               type="button"
               onClick={onSeeAll}
-              className="min-h-10 rounded-full px-3 text-sm font-semibold text-ink underline underline-offset-4"
+              className="type-eyebrow min-h-10 shrink-0 whitespace-nowrap rounded-pill px-3 text-fg underline underline-offset-4 transition-colors duration-200 hover:text-fg-heading"
             >
               Ver todos
             </button>
           ) : null}
         </div>
-        <Card className="px-5 py-1.5">
+        <Card className="px-5 py-1">
           {loading ? (
-            <div className="flex flex-col gap-4 py-4" aria-busy="true" aria-label="Cargando movimientos">
+            <div className="flex flex-col gap-4 py-5" aria-busy="true" aria-label="Cargando movimientos">
               {[0, 1, 2].map((i) => (
                 <Skeleton key={i} className="h-11" />
               ))}
@@ -123,11 +123,13 @@ export function DashboardScreen({ onNewTransaction, onNewReminder, onSeeAll }: D
 function ActionButton({
   label,
   icon,
+  tone,
   onClick,
   disabled,
 }: {
   label: string
   icon: 'arrow-up' | 'arrow-down'
+  tone: 'iris' | 'orchid'
   onClick(): void
   disabled: boolean
 }) {
@@ -136,13 +138,14 @@ function ActionButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="flex min-h-24 flex-col items-start justify-between rounded-card bg-surface p-4 text-left shadow-card transition duration-150 hover:bg-white/60 active:scale-[0.97] disabled:opacity-50"
+      className={`flex min-h-36 flex-col items-start justify-between rounded-tile p-5 text-left text-void transition duration-200 ease-out hover:brightness-105 active:scale-[0.98] active:brightness-95 disabled:opacity-40 ${
+        tone === 'iris' ? 'bg-iris-gleam' : 'bg-orchid-bloom'
+      }`}
     >
-      <span className="grid size-10 place-items-center rounded-full bg-ink text-white">
+      <span className="grid size-11 place-items-center rounded-pill bg-void text-pure">
         <Icon name={icon} size={20} />
       </span>
-      <span className="text-lg font-bold tracking-tight">{label}</span>
+      <span className="type-heading text-void">{label}</span>
     </button>
   )
 }
-

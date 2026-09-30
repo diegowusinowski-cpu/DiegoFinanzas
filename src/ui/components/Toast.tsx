@@ -27,7 +27,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         className="pointer-events-none fixed inset-x-0 top-0 z-[60] flex justify-center px-4 pt-safe"
       >
         {message ? (
-          <p className="animate-rise rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white shadow-float">
+          <p className="animate-rise rounded-pill bg-action px-5 py-3 text-body-sm font-medium text-fg-on-action shadow-float">
             {message}
           </p>
         ) : null}

@@ -34,8 +34,8 @@ export function LoginScreen() {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-6 pt-safe pb-safe">
       <header className="flex flex-col items-center gap-1 pt-6">
-        <Wordmark className="text-5xl" />
-        <p className="text-[0.7rem] font-medium tracking-[0.16em] text-muted uppercase">{BRAND_NAME}</p>
+        <Wordmark size="lg" />
+        <p className="type-eyebrow text-fg-muted">{BRAND_NAME}</p>
       </header>
       {status === 'setup' ? <SetupFlow /> : <PinLogin name={profile?.displayName ?? ''} phone={profile?.phone ?? ''} />}
     </main>
@@ -100,14 +100,16 @@ function PinLogin({ name, phone }: { name: string; phone: string }) {
   return (
     <>
       <section className="flex flex-1 flex-col items-center justify-center gap-3 pt-10 text-center animate-rise">
-        <h1 className="text-[1.65rem] leading-tight font-bold tracking-tight">Bienvenido de nuevo, {name}</h1>
-        <p className="text-base text-muted" aria-label="Número de teléfono parcialmente oculto">
+        <h1 className="type-heading text-balance">
+          Bienvenido de nuevo, <em className="italic">{name}</em>
+        </h1>
+        <p className="font-mono text-body-sm tracking-[0.08em] text-fg-soft" aria-label="Número de teléfono parcialmente oculto">
           {maskPhone(phone)}
         </p>
         <div className="mt-6" key={shake}>
           <PinDots length={pin.length} shake={shake > 0} label="PIN ingresado" />
         </div>
-        <p role="alert" className="min-h-6 text-sm font-medium text-expense">
+        <p role="alert" className="min-h-6 text-body-sm text-danger">
           {locked ? `Probá de nuevo en ${formatCountdown(remaining)}.` : error}
         </p>
       </section>
@@ -117,14 +119,14 @@ function PinLogin({ name, phone }: { name: string; phone: string }) {
         <nav className="mt-5 flex flex-col items-center gap-1" aria-label="Otras opciones de acceso">
           <button
             type="button"
-            className="min-h-11 px-4 text-sm font-semibold text-ink underline underline-offset-4"
+            className="type-eyebrow min-h-11 px-4 text-fg underline underline-offset-4"
             onClick={() => setConfirm('other-number')}
           >
             Usar otro número de teléfono
           </button>
           <button
             type="button"
-            className="min-h-11 px-4 text-sm font-medium text-muted underline underline-offset-4"
+            className="type-eyebrow min-h-11 px-4 text-fg-soft underline underline-offset-4"
             onClick={() => setConfirm('forgot')}
           >
             No recuerdo mi contraseña
@@ -154,12 +156,12 @@ function ResetAccessSheet({ action, onClose }: { action: ConfirmAction; onClose(
   return (
     <Sheet open={action !== null} onClose={onClose} title={forgot ? 'Recuperar acceso' : 'Usar otro número'}>
       <div className="flex flex-col gap-4 pb-2">
-        <p className="text-base text-ink-soft">
+        <p className="text-body text-fg-heading">
           {forgot
             ? 'La recuperación por SMS estará disponible cuando se active la autenticación definitiva. Mientras tanto podés crear un PIN nuevo en este dispositivo.'
             : 'Vas a registrar otro número de teléfono y crear un PIN nuevo en este dispositivo.'}
         </p>
-        <p className="text-sm text-muted">Tus movimientos guardados no se borran.</p>
+        <p className="text-body-sm text-fg-soft">Tus movimientos guardados no se borran.</p>
         <Button block loading={busy} onClick={() => void run()}>
           {forgot ? 'Crear un PIN nuevo' : 'Continuar'}
         </Button>
@@ -243,8 +245,10 @@ function SetupFlow() {
     return (
       <form onSubmit={submitPhone} className="flex flex-1 flex-col justify-center gap-6 animate-rise" noValidate>
         <div className="flex flex-col gap-2 text-center">
-          <h1 className="text-[1.65rem] leading-tight font-bold tracking-tight">Bienvenido, Diego</h1>
-          <p className="text-base text-muted">Registrá tu número de teléfono para proteger tu cuenta.</p>
+          <h1 className="type-heading">
+            Bienvenido, <em className="italic">Diego</em>
+          </h1>
+          <p className="text-body text-fg-soft">Registrá tu número de teléfono para proteger tu cuenta.</p>
         </div>
         <Field label="Número de teléfono" error={phoneError}>
           <input
@@ -269,16 +273,16 @@ function SetupFlow() {
   return (
     <>
       <section className="flex flex-1 flex-col items-center justify-center gap-3 pt-10 text-center animate-rise">
-        <h1 className="text-[1.65rem] leading-tight font-bold tracking-tight">
+        <h1 className="type-heading">
           {creating ? 'Creá tu PIN' : 'Confirmá tu PIN'}
         </h1>
-        <p className="text-base text-muted">
+        <p className="text-body text-fg-soft">
           {creating ? 'Elegí 4 dígitos para entrar a DWF.' : 'Ingresá el mismo PIN otra vez.'}
         </p>
         <div className="mt-6" key={shake}>
           <PinDots length={pin.length} shake={shake > 0} label="PIN ingresado" />
         </div>
-        <p role="alert" className="min-h-6 text-sm font-medium text-expense">
+        <p role="alert" className="min-h-6 text-body-sm text-danger">
           {error}
         </p>
       </section>
@@ -287,7 +291,7 @@ function SetupFlow() {
         <div className="mt-5 flex justify-center">
           <button
             type="button"
-            className="min-h-11 px-4 text-sm font-semibold text-ink underline underline-offset-4"
+            className="type-eyebrow min-h-11 px-4 text-fg underline underline-offset-4"
             onClick={() => {
               setPin('')
               setFirstPin('')

@@ -22,8 +22,8 @@ export function PinDots({ length, shake = false, label }: PinDotsProps) {
         <span
           key={i}
           className={cx(
-            'size-4 rounded-full border-2 border-ink transition duration-150',
-            i < length ? 'scale-110 bg-ink' : 'bg-transparent',
+            'size-3.5 rounded-pill border border-pure transition duration-200 ease-out',
+            i < length ? 'scale-110 bg-pure' : 'bg-transparent',
           )}
         />
       ))}
@@ -58,10 +58,10 @@ export function PinPad({ onDigit, onBackspace, disabled = false }: PinPadProps) 
   }, [disabled])
 
   const keyClass =
-    'grid aspect-[1.35] w-full place-items-center rounded-3xl bg-surface text-3xl font-semibold text-ink shadow-card transition duration-100 select-none hover:bg-sunken active:scale-95 active:bg-sunken disabled:opacity-40 disabled:active:scale-100'
+    'grid h-[4.25rem] w-full place-items-center rounded-card bg-surface text-[2rem] font-light text-fg transition-colors duration-200 select-none hover:bg-surface-hover active:bg-surface-hover disabled:opacity-40'
 
   return (
-    <div className="grid w-full grid-cols-3 gap-3" role="group" aria-label="Teclado numérico">
+    <div className="grid w-full grid-cols-3 gap-2.5" role="group" aria-label="Teclado numérico">
       {KEYS.map((digit) => (
         <button key={digit} type="button" className={keyClass} disabled={disabled} onClick={() => onDigit(digit)}>
           {digit}
@@ -73,12 +73,12 @@ export function PinPad({ onDigit, onBackspace, disabled = false }: PinPadProps) 
       </button>
       <button
         type="button"
-        className={cx(keyClass, 'bg-transparent shadow-none hover:bg-sunken')}
+        className={cx(keyClass, 'bg-transparent text-fg-soft hover:bg-glass')}
         disabled={disabled}
         onClick={onBackspace}
         aria-label="Borrar último dígito"
       >
-        <Icon name="backspace" size={28} />
+        <Icon name="backspace" size={26} />
       </button>
     </div>
   )

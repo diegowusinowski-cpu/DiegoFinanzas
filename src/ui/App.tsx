@@ -30,7 +30,7 @@ export function App() {
 function Splash() {
   return (
     <main className="grid min-h-dvh place-items-center" aria-busy="true" aria-label="Cargando DWF">
-      <Wordmark className="animate-pulse text-5xl" />
+      <Wordmark size="lg" className="animate-pulse" />
     </main>
   )
 }
@@ -52,15 +52,15 @@ function Shell() {
   return (
     <div className="mx-auto min-h-dvh w-full max-w-md px-5 pb-36">
       {!persistent ? (
-        <p role="status" className="mt-safe mb-3 rounded-2xl bg-warn-bg p-3 text-sm font-medium text-warn">
+        <p role="status" className="mt-safe mb-3 rounded-card border border-line bg-glass-strong p-4 text-body-sm text-fg-heading">
           Tu navegador no permite guardar datos: los movimientos se perderán al cerrar esta pestaña.
         </p>
       ) : null}
 
       {status === 'error' ? (
         <Card className="mt-safe flex flex-col items-start gap-3 p-6" role="alert">
-          <h1 className="text-xl font-bold">No pudimos cargar tus datos</h1>
-          <p className="text-sm text-ink-soft">{errorMessage}</p>
+          <h1 className="type-title">No pudimos cargar tus datos</h1>
+          <p className="text-body-sm text-fg-soft">{errorMessage}</p>
           <Button onClick={reload}>Reintentar</Button>
         </Card>
       ) : tab === 'home' ? (

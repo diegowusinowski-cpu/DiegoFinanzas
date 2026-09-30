@@ -74,7 +74,7 @@ function ReminderForm({ onDone }: { onDone(): void }) {
         <input type="date" className={inputClass} value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
       </Field>
       {formError ? (
-        <p role="alert" className="rounded-2xl bg-expense-bg p-3 text-sm font-medium text-expense">
+        <p role="alert" className="rounded-control border border-danger/40 bg-danger/10 p-3 text-body-sm text-danger">
           {formError}
         </p>
       ) : null}

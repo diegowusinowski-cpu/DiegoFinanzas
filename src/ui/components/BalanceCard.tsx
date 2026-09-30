@@ -1,14 +1,16 @@
 import { useState } from 'react'
 import { formatMoney, type MinorUnits } from '@/domain'
+import { cx } from '../cx'
 import { Icon } from './Icon'
 import { Skeleton } from './Card'
 
 export function BalanceCard({ balance, loading }: { balance: MinorUnits; loading: boolean }) {
   const [hidden, setHidden] = useState(false)
+  const text = hidden ? '$ ••••••' : formatMoney(balance)
   return (
-    <section aria-labelledby="balance-label" className="flex flex-col gap-1 pt-2">
+    <section aria-labelledby="balance-label" className="flex flex-col gap-3 pt-3">
       <div className="flex items-center gap-2">
-        <h2 id="balance-label" className="text-sm font-semibold text-muted">
+        <h2 id="balance-label" className="type-eyebrow">
           Saldo disponible
         </h2>
         <button
@@ -16,19 +18,23 @@ export function BalanceCard({ balance, loading }: { balance: MinorUnits; loading
           onClick={() => setHidden((h) => !h)}
           aria-pressed={hidden}
           aria-label={hidden ? 'Mostrar saldo' : 'Ocultar saldo'}
-          className="grid size-8 place-items-center rounded-full text-muted transition hover:bg-sunken"
+          className="grid size-8 place-items-center rounded-pill text-fg-soft transition-colors duration-200 hover:bg-glass hover:text-fg"
         >
-          <Icon name={hidden ? 'eye-off' : 'eye'} size={18} />
+          <Icon name={hidden ? 'eye-off' : 'eye'} size={17} />
         </button>
       </div>
       {loading ? (
-        <Skeleton className="h-12 w-56" />
+        <Skeleton className="h-14 w-60" />
       ) : (
         <p
           data-testid="balance"
-          className={`text-[2.6rem] leading-none font-extrabold tracking-tight tabular-nums ${balance < 0 ? 'text-expense' : 'text-ink'}`}
+          className={cx(
+            'break-words tabular-nums',
+            text.length > 13 ? 'type-display' : 'type-display-xl',
+            balance < 0 && !hidden && 'text-orchid-bloom',
+          )}
         >
-          {hidden ? '$ ••••••' : formatMoney(balance)}
+          {text}
         </p>
       )}
     </section>

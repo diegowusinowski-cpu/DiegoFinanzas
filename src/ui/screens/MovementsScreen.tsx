@@ -16,7 +16,7 @@ export function MovementsScreen() {
   return (
     <div className="flex flex-col gap-5 animate-rise">
       <header className="pt-safe">
-        <h1 className="text-3xl font-extrabold tracking-tight">Movimientos</h1>
+        <h1 className="type-display">Movimientos</h1>
       </header>
       {status === 'loading' ? (
         <Skeleton className="h-64 rounded-card" />
@@ -29,8 +29,8 @@ export function MovementsScreen() {
       ) : (
         groups.map((group) => (
           <section key={group.date} aria-label={formatRelativeDate(group.date, today)} className="flex flex-col gap-2">
-            <h2 className="px-1 text-sm font-semibold text-muted">{formatRelativeDate(group.date, today)}</h2>
-            <Card className="px-5 py-1.5">
+            <h2 className="type-eyebrow px-1">{formatRelativeDate(group.date, today)}</h2>
+            <Card className="px-5 py-1">
               <ul className="divide-y divide-line">
                 {group.items.map((t) => (
                   <MovementItem

@@ -16,39 +16,34 @@ export function MovementItem({ transaction, category, today }: MovementItemProps
   const typeLabel = income ? 'Ingreso' : 'Gasto'
 
   return (
-    <li className="flex items-center gap-3.5 py-3.5">
+    <li className="flex items-center gap-3.5 py-4">
       <span
         className={cx(
-          'grid size-11 shrink-0 place-items-center rounded-full',
-          income ? 'bg-income-bg text-income' : 'bg-expense-bg text-expense',
-          cancelled && 'opacity-50',
+          'grid size-11 shrink-0 place-items-center rounded-pill',
+          income ? 'bg-action text-fg-on-action' : 'border border-line bg-glass-strong text-fg',
+          cancelled && 'opacity-40',
         )}
       >
-        <Icon name={income ? 'arrow-down' : 'arrow-up'} size={20} />
+        <Icon name={income ? 'arrow-down' : 'arrow-up'} size={19} />
       </span>
       <div className="min-w-0 flex-1">
-        <p className={cx('truncate text-[0.95rem] font-semibold', cancelled && 'text-muted line-through')}>
+        <p className={cx('truncate text-body font-medium', cancelled ? 'text-fg-muted line-through' : 'text-fg')}>
           {transaction.description}
         </p>
-        <p className="text-[0.8rem] leading-snug text-muted">
+        <p className="text-caption text-fg-soft">
           {typeLabel} · {formatRelativeDate(transaction.date, today)}, {transaction.time}
           {category ? ` · ${category.name}` : ''}
         </p>
         {scheduled || cancelled ? (
-          <span
-            className={cx(
-              'mt-1 inline-block rounded-full px-2 py-0.5 text-[0.68rem] font-semibold',
-              scheduled ? 'bg-warn-bg text-warn' : 'bg-sunken text-muted',
-            )}
-          >
+          <span className="mt-1.5 inline-block rounded-pill border border-line bg-glass px-2.5 py-0.5 font-mono text-[0.625rem] tracking-[0.12em] text-fg-soft uppercase">
             {scheduled ? 'Programado' : 'Anulado'}
           </span>
         ) : null}
       </div>
       <p
         className={cx(
-          'shrink-0 text-[0.95rem] font-bold tabular-nums',
-          cancelled ? 'text-muted line-through' : income ? 'text-income' : 'text-expense',
+          'shrink-0 text-body font-medium tabular-nums',
+          cancelled ? 'text-fg-muted line-through' : income ? 'text-fg' : 'text-fg-soft',
         )}
         aria-label={`${typeLabel} de ${formatMoney(transaction.amount)}`}
       >

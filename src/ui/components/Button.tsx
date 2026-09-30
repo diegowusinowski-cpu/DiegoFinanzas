@@ -9,11 +9,12 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   loading?: boolean
 }
 
+/** Variantes del sistema: blanco sobre negro es la única acción primaria. */
 const VARIANTS: Record<Variant, string> = {
-  primary: 'bg-ink text-white hover:bg-ink-soft active:scale-[0.98]',
-  secondary: 'bg-sunken text-ink hover:bg-line active:scale-[0.98]',
-  ghost: 'bg-transparent text-ink-soft hover:bg-sunken',
-  danger: 'bg-expense text-white hover:opacity-90 active:scale-[0.98]',
+  primary: 'bg-action text-fg-on-action hover:bg-cloud active:bg-silver',
+  secondary: 'border border-line bg-glass text-fg hover:bg-glass-strong active:bg-surface-hover',
+  ghost: 'bg-transparent text-fg-soft hover:bg-glass active:bg-glass-strong',
+  danger: 'border border-danger/40 bg-transparent text-danger hover:bg-danger/10 active:bg-danger/20',
 }
 
 export function Button({
@@ -32,7 +33,7 @@ export function Button({
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       className={cx(
-        'inline-flex min-h-13 items-center justify-center gap-2 rounded-full px-6 text-base font-semibold transition duration-150 disabled:opacity-50',
+        'inline-flex min-h-13 items-center justify-center gap-2 rounded-pill px-7 text-body font-normal transition-colors duration-200 ease-out disabled:opacity-40',
         VARIANTS[variant],
         block && 'w-full',
         className,
@@ -51,7 +52,7 @@ export function Spinner({ className }: { className?: string }) {
       role="status"
       aria-label="Cargando"
       className={cx(
-        'inline-block size-4 animate-spin rounded-full border-2 border-current border-t-transparent',
+        'inline-block size-4 animate-spin rounded-pill border-2 border-current border-t-transparent',
         className,
       )}
     />

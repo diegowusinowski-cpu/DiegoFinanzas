@@ -1,0 +1,107 @@
+/*
+ * DWF Design System — tokens.
+ * Lenguaje: galería nocturna. Lienzo casi negro, serif liviano para las frases
+ * importantes, sans neutra para la interfaz, mono en mayúsculas para etiquetas,
+ * y paneles de color pleno solo para módulos. La elevación se logra con
+ * escalones de superficie, no con sombras.
+ */
+@theme {
+  /* ── Paleta base ─────────────────────────────── */
+  --color-iris-gleam: #847dff;
+  --color-cyan-signal: #00b3dd;
+  --color-pale-iris: #d1c9ff;
+  --color-deep-iris: #4b49aa;
+  --color-orchid-bloom: #dd90d8;
+  --color-periwinkle: #90b8f0;
+  --color-obsidian: #0f1011;
+  --color-abyss: #090a0b;
+  --color-graphite: #2e2e2e;
+  --color-steel: #3f4041;
+  --color-silver: #cacaca;
+  --color-fog: #6a6b6b;
+  --color-ash: #9f9fa0;
+  --color-cloud: #f5f5f7;
+  --color-pure: #ffffff;
+  --color-void: #000000;
+  /* Funcional (no está en la referencia): errores y validación. */
+  --color-danger: #ff8f85;
+
+  /* ── Semánticos: lo que usan los componentes ─── */
+  --color-canvas: var(--color-obsidian);
+  --color-canvas-deep: var(--color-abyss);
+  --color-surface: var(--color-graphite);
+  --color-surface-hover: var(--color-steel);
+  --color-surface-inverse: var(--color-silver);
+  --color-fg: var(--color-pure);
+  --color-fg-heading: var(--color-cloud);
+  --color-fg-soft: var(--color-ash);
+  --color-fg-muted: var(--color-fog);
+  --color-fg-on-action: var(--color-void);
+  --color-action: var(--color-pure);
+  --color-data: var(--color-cyan-signal);
+  --color-glass: rgb(255 255 255 / 0.08);
+  --color-glass-strong: rgb(255 255 255 / 0.14);
+  --color-line: rgb(255 255 255 / 0.12);
+
+  /* ── Tipografía ──────────────────────────────── */
+  --font-display: 'Newsreader Variable', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --text-display-xl: 3.5rem;
+  --text-display-xl--line-height: 0.95;
+  --text-display: 2.5rem;
+  --text-display--line-height: 1;
+  --text-heading: 1.625rem;
+  --text-heading--line-height: 1.05;
+  --text-title: 1.5rem;
+  --text-title--line-height: 1.1;
+  --text-subheading: 1.125rem;
+  --text-subheading--line-height: 1.5;
+  --text-body: 1rem;
+  --text-body--line-height: 1.5;
+  --text-body-sm: 0.875rem;
+  --text-body-sm--line-height: 1.45;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1.4;
+  --text-label: 0.6875rem;
+  --text-label--line-height: 1.4;
+
+  --tracking-display: -0.02em;
+  --tracking-label: 0.16em;
+
+  /* ── Radios ──────────────────────────────────── */
+  --radius-control: 0.5rem; /* inputs */
+  --radius-card: 1.5rem;
+  --radius-tile: 1.875rem; /* paneles de color y hojas */
+  --radius-pill: 9999px;
+
+  /* ── Sombras: solo una, para elementos flotantes ─ */
+  --shadow-float: 0 18px 20px 0 rgb(0 0 0 / 0.2);
+
+  /* ── Movimiento ──────────────────────────────── */
+  --ease-reveal: cubic-bezier(0.455, 0.03, 0.515, 0.955);
+  --animate-rise: rise 0.7s var(--ease-reveal) both;
+  --animate-sheet: sheet 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-fade: fade 0.25s ease-out both;
+  --animate-shake: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes sheet {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  @keyframes fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes shake {
+    10%, 90% { transform: translateX(-2px); }
+    20%, 80% { transform: translateX(4px); }
+    30%, 50%, 70% { transform: translateX(-7px); }
+    40%, 60% { transform: translateX(7px); }
+  }
+}
