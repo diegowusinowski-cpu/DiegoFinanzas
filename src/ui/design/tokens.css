@@ -79,8 +79,9 @@
   --color-scrim: rgb(17 19 17 / 0.45);
 
   /* ── Tipografía ──────────────────────────────── */
-  /* Onest: grotesca geométrica de dígitos redondos y anchos, la más cercana a ARQ. */
-  --font-sans: 'Onest Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* DM Sans: la familia web más cercana a ARQ en cifras (bowls circulares, 6/9 geométricos,
+     coma de cola larga, "$" compacto) y en letras. Eje de tamaño óptico automático. */
+  --font-sans: 'DM Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-display: var(--font-sans);
 
   --font-weight-regular: 400;

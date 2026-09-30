@@ -12,6 +12,7 @@
     font-family: var(--font-sans);
     font-size: var(--text-body);
     font-weight: var(--font-weight-regular);
+    font-optical-sizing: auto;
     -webkit-font-smoothing: antialiased;
     overscroll-behavior-y: none;
   }

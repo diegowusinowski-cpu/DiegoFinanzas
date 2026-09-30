@@ -1,4 +1,4 @@
 @import 'tailwindcss';
-@import '@fontsource-variable/onest/wght.css';
+@import '@fontsource-variable/dm-sans/opsz.css';
 @import './ui/design/tokens.css';
 @import './ui/design/base.css';
