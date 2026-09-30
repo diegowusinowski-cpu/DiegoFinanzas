@@ -2,8 +2,7 @@ import { useAuth } from '@/state/AuthContext'
 import { useFinance } from '@/state/FinanceContext'
 import type { TransactionType } from '@/domain'
 import { BalanceCard } from '../components/BalanceCard'
-import { LogoDiegoFinanzas } from '../brand/LogoDiegoFinanzas'
-import { BrandFooter } from '../components/Brand'
+import { BrandFooter, Wordmark } from '../components/Brand'
 import { Button } from '../components/Button'
 import { EmptyState, Skeleton } from '../components/Card'
 import { Icon } from '../components/Icon'
@@ -30,7 +29,7 @@ export function DashboardScreen({ onNewTransaction, onNewReminder, onSeeAll }: D
       {/* Superficie financiera: identidad, saldo y acciones principales. */}
       <section className="bg-panel-texture px-gutter pt-safe pb-9 text-on-panel">
         <header className="flex min-h-control-md items-center justify-between">
-          <LogoDiegoFinanzas size="sm" className="text-on-panel" />
+          <Wordmark className="text-on-panel" />
           {profile ? (
             <p className="rounded-pill bg-glass-on-panel px-3.5 py-2 text-body-sm leading-none font-medium text-on-panel">
               Hola, {profile.displayName}

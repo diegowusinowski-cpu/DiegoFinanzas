@@ -79,13 +79,10 @@
   --color-scrim: rgb(17 19 17 / 0.45);
 
   /* ── Tipografía ──────────────────────────────── */
-  /* UI TYPEFACE (textos, títulos, botones, labels, navegación): DM Sans, eje de tamaño óptico automático. */
-  --font-ui: 'DM Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-sans: var(--font-ui);
-  --font-display: var(--font-ui);
-  /* NUMERIC DISPLAY: solo cifras financieras (saldo, montos, teclado). Anton: extra pesada, muy alta
-     y condensada, con contadores en ranura; la alternativa libre más cercana a la referencia. */
-  --font-display-numeric: 'Anton', 'Arial Narrow', 'Helvetica Neue Condensed Bold', Impact, sans-serif;
+  /* DM Sans: la familia web más cercana a ARQ en cifras (bowls circulares, 6/9 geométricos,
+     coma de cola larga, "$" compacto) y en letras. Eje de tamaño óptico automático. */
+  --font-sans: 'DM Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: var(--font-sans);
 
   --font-weight-regular: 400;
   --font-weight-medium: 500;
@@ -94,14 +91,14 @@
   /* money: cifra protagonista (saldo) y sus centavos */
   --text-money: 2.75rem;
   --text-money--line-height: 1;
-  --tracking-money: 0.005em;
+  --tracking-money: -0.03em;
   --text-money-cents: 1.7rem; /* ≈ 62 % de la cifra, como ARQ */
   --text-money-sm: 2.125rem; /* montos muy largos */
   /* amount: monto protagonista de las pantallas de registro */
   --text-amount: 3.75rem;
   --text-amount-md: 3rem;
   --text-amount-sm: 2.25rem;
-  --tracking-amount: 0.01em;
+  --tracking-amount: -0.03em;
   /* display: título de pantalla */
   --text-display: 1.75rem;
   --text-display--line-height: 1.1;
@@ -159,10 +156,6 @@
   /* ── Sombras: mínimas ────────────────────────── */
   --shadow-card: 0 1px 2px rgb(17 19 17 / 0.05);
   --shadow-float: 0 8px 24px -8px rgb(17 19 17 / 0.2), 0 1px 2px rgb(17 19 17 / 0.06);
-
-  /* ── Logotipo DiegoFinanzas ──────────────────── */
-  --spacing-logo-sm: 2.125rem; /* alto en el encabezado del Home */
-  --spacing-logo-lg: 5.5rem; /* alto en el acceso y la carga */
 
   /* ── Iconografía: una sola familia ───────────── */
   --icon-size-sm: 16px;

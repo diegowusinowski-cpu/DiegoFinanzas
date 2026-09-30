@@ -43,7 +43,7 @@ export function MovementItem({ transaction, category, today }: MovementItemProps
       </div>
       <p
         className={cx(
-          'type-number-row shrink-0 text-right',
+          'type-number type-subheading shrink-0 text-right',
           cancelled ? 'text-fg-muted line-through' : income ? 'text-positive' : 'text-fg',
         )}
         aria-label={`${typeLabel} de ${formatMoney(transaction.amount, transaction.currency)}`}

@@ -4,7 +4,7 @@ import { useAuth } from '@/state/AuthContext'
 import { FinanceProvider, useFinance } from '@/state/FinanceContext'
 import { useServices } from '@/state/ServicesContext'
 import { BottomNav, type Tab } from './components/BottomNav'
-import { LogoDiegoFinanzas } from './brand/LogoDiegoFinanzas'
+import { Wordmark } from './components/Brand'
 import { Button } from './components/Button'
 import { Card } from './components/Card'
 import { ReminderSheet } from './components/ReminderSheet'
@@ -31,7 +31,7 @@ export function App() {
 function Splash() {
   return (
     <main className="mx-auto grid min-h-dvh max-w-md place-items-center bg-canvas" aria-busy="true" aria-label="Cargando DWF">
-      <LogoDiegoFinanzas size="lg" className="animate-pulse" />
+      <Wordmark size="lg" className="animate-pulse" />
     </main>
   )
 }

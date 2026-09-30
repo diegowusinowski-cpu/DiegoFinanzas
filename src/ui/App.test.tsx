@@ -44,7 +44,7 @@ describe('Acceso', () => {
     await lock(user)
 
     expect(await screen.findByRole('heading', { name: 'Bienvenido de nuevo, Diego' })).toBeInTheDocument()
-    expect(screen.getByRole('img', { name: 'DiegoFinanzas' })).toBeInTheDocument()
+    expect(screen.getByText('DWF')).toBeInTheDocument()
     expect(screen.getByText('+54 •••••••• 789')).toBeInTheDocument()
     expect(screen.queryByText(/1123456/)).not.toBeInTheDocument()
     expect(screen.getByRole('img', { name: /0 de 4 dígitos/ })).toBeInTheDocument()
@@ -110,13 +110,6 @@ describe('Dashboard', () => {
     expect(screen.getByRole('heading', { name: 'Últimos movimientos' })).toBeInTheDocument()
     expect(screen.getByText('Dieto Wusinowski Finanzas')).toBeInTheDocument()
     expect(document.body.textContent).not.toMatch(/ARQ/i)
-  })
-
-  it('el logotipo DiegoFinanzas reemplaza a DWF en el encabezado del Home', async () => {
-    const user = setupUser()
-    await firstRun(user)
-    expect(screen.getByRole('img', { name: 'DiegoFinanzas' })).toBeInTheDocument()
-    expect(screen.queryByLabelText('Dieto Wusinowski Finanzas')).not.toBeInTheDocument()
   })
 
   it('cabecera de cuenta: sin rótulo visible, ARS • Datos de cuenta, y acciones Ingreso | Gasto', async () => {

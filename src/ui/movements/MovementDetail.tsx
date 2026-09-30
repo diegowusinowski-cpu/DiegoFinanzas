@@ -78,9 +78,7 @@ export function MovementDetail({ transaction: t, category, onClose }: MovementDe
 
           <dl className="border-t border-line py-2">
             <Row label="Tipo">{income ? 'Ingreso' : 'Gasto'}</Row>
-            <Row label="Importe">
-              <span className="type-number-row">{amount}</span>
-            </Row>
+            <Row label="Importe">{amount}</Row>
             <Row label="Moneda">{t.currency}</Row>
             <Row label="Categoría">{category?.name ?? '—'}</Row>
             <Row label="Tipo de operación">{t.paymentMethod ? PAYMENT_LABEL[t.paymentMethod] : '—'}</Row>

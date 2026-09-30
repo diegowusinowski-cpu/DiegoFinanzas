@@ -2,8 +2,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { PIN_LENGTH, maskPhone, normalizePhone } from '@/services/auth'
 import { useAuth } from '@/state/AuthContext'
 import { Button } from '../components/Button'
-import { LogoDiegoFinanzas } from '../brand/LogoDiegoFinanzas'
-import { BRAND_NAME } from '../components/Brand'
+import { BRAND_NAME, Wordmark } from '../components/Brand'
 import { Field, inputClass } from '../components/Field'
 import { PinDots, PinPad } from '../components/PinPad'
 import { Sheet } from '../components/Sheet'
@@ -35,7 +34,7 @@ export function LoginScreen() {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-canvas px-gutter pt-safe pb-safe sm:border-x sm:border-line">
       <header className="flex flex-col items-center gap-2 pt-6">
-        <LogoDiegoFinanzas size="lg" />
+        <Wordmark size="lg" />
         <p className="text-caption text-fg-soft">{BRAND_NAME}</p>
       </header>
       {status === 'setup' ? <SetupFlow /> : <PinLogin name={profile?.displayName ?? ''} phone={profile?.phone ?? ''} />}
@@ -104,7 +103,7 @@ function PinLogin({ name, phone }: { name: string; phone: string }) {
         <h1 className="type-heading text-balance">
           Bienvenido de nuevo, <em className="font-semibold not-italic">{name}</em>
         </h1>
-        <p className="text-body-sm text-fg-soft" aria-label="Número de teléfono parcialmente oculto">
+        <p className="type-number text-body-sm text-fg-soft" aria-label="Número de teléfono parcialmente oculto">
           {maskPhone(phone)}
         </p>
         <div className="mt-6" key={shake}>

@@ -33,7 +33,7 @@ export function NumericKeypad({ onKey }: NumericKeypadProps) {
   }, [])
 
   const key =
-    'interactive font-numeric mx-auto grid h-16 w-full max-w-24 place-items-center rounded-pill text-[2rem] text-fg select-none hover:bg-sunken active:bg-sunken-hover'
+    'interactive mx-auto grid h-16 w-full max-w-24 place-items-center rounded-pill text-[1.75rem] font-medium text-fg select-none hover:bg-sunken active:bg-sunken-hover'
 
   return (
     <div role="group" aria-label="Teclado numérico" className="grid grid-cols-3 px-gutter">
