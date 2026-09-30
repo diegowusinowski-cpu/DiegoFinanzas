@@ -32,10 +32,10 @@ const formatCountdown = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).p
 export function LoginScreen() {
   const { status, profile } = useAuth()
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-6 pt-safe pb-safe">
-      <header className="flex flex-col items-center gap-1 pt-6">
+    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-canvas px-gutter pt-safe pb-safe sm:border-x sm:border-line">
+      <header className="flex flex-col items-center gap-2 pt-6">
         <Wordmark size="lg" />
-        <p className="type-eyebrow text-fg-muted">{BRAND_NAME}</p>
+        <p className="text-caption text-fg-soft">{BRAND_NAME}</p>
       </header>
       {status === 'setup' ? <SetupFlow /> : <PinLogin name={profile?.displayName ?? ''} phone={profile?.phone ?? ''} />}
     </main>
@@ -119,14 +119,14 @@ function PinLogin({ name, phone }: { name: string; phone: string }) {
         <nav className="mt-5 flex flex-col items-center gap-1" aria-label="Otras opciones de acceso">
           <button
             type="button"
-            className="type-eyebrow min-h-11 px-4 text-fg underline underline-offset-4"
+            className="interactive min-h-control-md rounded-pill px-4 text-body-sm font-medium text-fg hover:bg-sunken"
             onClick={() => setConfirm('other-number')}
           >
             Usar otro número de teléfono
           </button>
           <button
             type="button"
-            className="type-eyebrow min-h-11 px-4 text-fg-soft underline underline-offset-4"
+            className="interactive min-h-control-md rounded-pill px-4 text-body-sm text-fg-soft hover:bg-sunken"
             onClick={() => setConfirm('forgot')}
           >
             No recuerdo mi contraseña
@@ -162,10 +162,10 @@ function ResetAccessSheet({ action, onClose }: { action: ConfirmAction; onClose(
             : 'Vas a registrar otro número de teléfono y crear un PIN nuevo en este dispositivo.'}
         </p>
         <p className="text-body-sm text-fg-soft">Tus movimientos guardados no se borran.</p>
-        <Button block loading={busy} onClick={() => void run()}>
+        <Button block size="lg" loading={busy} onClick={() => void run()}>
           {forgot ? 'Crear un PIN nuevo' : 'Continuar'}
         </Button>
-        <Button block variant="tertiary" onClick={onClose}>
+        <Button block size="lg" variant="tertiary" onClick={onClose}>
           Cancelar
         </Button>
       </div>
@@ -262,7 +262,7 @@ function SetupFlow() {
             onChange={(e) => setPhone(e.target.value)}
           />
         </Field>
-        <Button type="submit" block>
+        <Button type="submit" block size="lg">
           Continuar
         </Button>
       </form>
@@ -291,7 +291,7 @@ function SetupFlow() {
         <div className="mt-5 flex justify-center">
           <button
             type="button"
-            className="type-eyebrow min-h-11 px-4 text-fg underline underline-offset-4"
+            className="interactive min-h-control-md rounded-pill px-4 text-body-sm font-medium text-fg hover:bg-sunken"
             onClick={() => {
               setPin('')
               setFirstPin('')

@@ -28,14 +28,17 @@ export function Skeleton({ className }: { className?: string }) {
   return <div aria-hidden="true" className={cx('animate-pulse rounded-2xl bg-glass', className)} />
 }
 
+/** Estado vacío compacto: ícono a la izquierda y texto, sin caja propia. */
 export function EmptyState({ icon, title, children }: { icon: IconName; title: string; children?: string }) {
   return (
-    <div className="flex flex-col items-center gap-2 px-6 py-9 text-center">
-      <span className="mb-1 grid size-12 place-items-center rounded-pill bg-sunken text-fg-soft">
-        <Icon name={icon} size="lg" />
+    <div className="flex items-center gap-3 py-1">
+      <span className="grid size-avatar shrink-0 place-items-center rounded-pill bg-sunken text-fg-soft">
+        <Icon name={icon} />
       </span>
-      <p className="type-subheading text-fg">{title}</p>
-      {children ? <p className="max-w-64 text-body-sm text-fg-soft">{children}</p> : null}
+      <div className="min-w-0">
+        <p className="type-subheading text-fg">{title}</p>
+        {children ? <p className="text-body-sm text-fg-soft">{children}</p> : null}
+      </div>
     </div>
   )
 }

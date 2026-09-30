@@ -73,7 +73,7 @@ export function Sheet({ open, title, onClose, children }: SheetProps) {
       >
         <div className="mx-auto mt-2.5 h-1 w-10 rounded-pill bg-sunken-hover" aria-hidden="true" />
         <div className="flex items-center justify-between px-6 pt-4 pb-2">
-          <h2 id={titleId} className="type-title">
+          <h2 id={titleId} className="type-heading">
             {title}
           </h2>
           <IconButton onClick={onClose} aria-label="Cerrar">

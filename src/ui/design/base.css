@@ -16,6 +16,10 @@
     -webkit-font-smoothing: antialiased;
     overscroll-behavior-y: none;
   }
+  /* Tablet/escritorio: la app es una columna móvil sobre un fondo más oscuro. */
+  @media (min-width: 40rem) {
+    html, body { background: var(--color-backdrop); }
+  }
   button { cursor: pointer; }
   button:disabled { cursor: not-allowed; }
   /* Foco: mismo anillo en toda la app. */
@@ -30,12 +34,23 @@
 
 /* ── Roles tipográficos ─────────────────────────
  * Cada rol fija tamaño, interlineado, tracking y peso desde tokens. */
-@utility type-display-xl {
-  font-size: var(--text-display-xl);
-  line-height: var(--text-display-xl--line-height);
-  letter-spacing: var(--tracking-display-xl);
+@utility type-money {
+  font-size: var(--text-money);
+  line-height: var(--text-money--line-height);
+  letter-spacing: var(--tracking-money);
   font-weight: var(--font-weight-medium);
-  color: var(--color-fg-heading);
+  font-variant-numeric: tabular-nums;
+}
+@utility type-money-sm {
+  font-size: var(--text-money-sm);
+  line-height: 1;
+  letter-spacing: var(--tracking-money);
+  font-weight: var(--font-weight-medium);
+  font-variant-numeric: tabular-nums;
+}
+@utility type-money-cents {
+  font-size: var(--text-money-cents);
+  letter-spacing: -0.02em;
 }
 @utility type-display {
   font-size: var(--text-display);
@@ -60,14 +75,15 @@
 @utility type-subheading {
   font-size: var(--text-subheading);
   line-height: var(--text-subheading--line-height);
+  letter-spacing: var(--tracking-subheading);
   font-weight: var(--font-weight-medium);
 }
-/* Etiquetas y textos de apoyo (labels, encabezados de grupo, enlaces de bloque). */
+/* Label: etiquetas, textos de apoyo, acciones de bloque. */
 @utility type-eyebrow {
   font-size: var(--text-label);
   line-height: var(--text-label--line-height);
   letter-spacing: var(--tracking-label);
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-regular);
   color: var(--color-fg-soft);
 }
 @utility type-button {
@@ -81,6 +97,14 @@
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
   font-weight: var(--font-weight-medium);
+}
+
+/* Superficie financiera oscura con trama sutil (hero del home). */
+@utility bg-panel-texture {
+  background-color: var(--color-panel);
+  background-image:
+    repeating-linear-gradient(135deg, rgb(255 255 255 / 0.028) 0 1px, transparent 1px 16px),
+    linear-gradient(180deg, var(--color-panel) 0%, var(--color-panel-deep) 100%);
 }
 
 /* ── Interacción base: hover / pressed / disabled / transición ── */

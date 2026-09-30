@@ -148,7 +148,7 @@ function TransactionForm({ initialType, onDone }: { initialType: TransactionType
         </p>
       ) : null}
 
-      <Button type="submit" block loading={saving}>
+      <Button type="submit" block size="lg" loading={saving}>
         {income ? 'Registrar ingreso' : 'Registrar gasto'}
       </Button>
     </form>

@@ -1,6 +1,6 @@
 import { formatRelativeDate } from '@/domain'
 import { useFinance } from '@/state/FinanceContext'
-import { Card, EmptyState, Skeleton } from '../components/Card'
+import { EmptyState, Skeleton } from '../components/Card'
 import { MovementItem } from '../components/MovementItem'
 
 export function MovementsScreen() {
@@ -14,24 +14,21 @@ export function MovementsScreen() {
   }, [])
 
   return (
-    <div className="flex flex-col gap-5 animate-rise">
+    <div className="flex flex-col gap-section px-gutter pb-2 animate-rise">
       <header className="pt-safe">
         <h1 className="type-display">Movimientos</h1>
       </header>
       {status === 'loading' ? (
-        <Skeleton className="h-64 rounded-card" />
+        <Skeleton className="h-64" />
       ) : groups.length === 0 ? (
-        <Card>
-          <EmptyState icon="list" title="Todavía no hay movimientos">
-            Tus ingresos y gastos se van a listar acá, del más reciente al más antiguo.
-          </EmptyState>
-        </Card>
+        <EmptyState icon="list" title="Todavía no hay movimientos">
+          Tus ingresos y gastos se van a listar acá, del más reciente al más antiguo.
+        </EmptyState>
       ) : (
         groups.map((group) => (
-          <section key={group.date} aria-label={formatRelativeDate(group.date, today)} className="flex flex-col gap-2">
-            <h2 className="type-eyebrow px-1">{formatRelativeDate(group.date, today)}</h2>
-            <Card className="px-5 py-1">
-              <ul className="divide-y divide-line">
+          <section key={group.date} aria-label={formatRelativeDate(group.date, today)} className="flex flex-col gap-1">
+            <h2 className="type-eyebrow">{formatRelativeDate(group.date, today)}</h2>
+            <ul>
                 {group.items.map((t) => (
                   <MovementItem
                     key={t.id}
@@ -40,8 +37,7 @@ export function MovementsScreen() {
                     today={today}
                   />
                 ))}
-              </ul>
-            </Card>
+            </ul>
           </section>
         ))
       )}

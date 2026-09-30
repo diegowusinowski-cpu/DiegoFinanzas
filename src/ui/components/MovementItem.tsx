@@ -8,6 +8,7 @@ interface MovementItemProps {
   today: string
 }
 
+/** Fila de movimiento: ícono, descripción + detalle, monto alineado a la derecha. */
 export function MovementItem({ transaction, category, today }: MovementItemProps) {
   const income = transaction.type === 'INCOME'
   const cancelled = transaction.status === 'CANCELLED'
@@ -16,33 +17,33 @@ export function MovementItem({ transaction, category, today }: MovementItemProps
   const typeLabel = income ? 'Ingreso' : 'Gasto'
 
   return (
-    <li className="flex items-center gap-3.5 py-4">
+    <li className="flex items-center gap-3 py-row">
       <span
         className={cx(
-          'grid size-11 shrink-0 place-items-center rounded-pill',
+          'grid size-avatar shrink-0 place-items-center rounded-pill',
           income ? 'bg-positive-bg text-positive' : 'bg-sunken text-fg',
           cancelled && 'opacity-40',
         )}
       >
-        <Icon name={income ? 'arrow-down' : 'arrow-up'} size="md" />
+        <Icon name={income ? 'arrow-down' : 'arrow-up'} />
       </span>
       <div className="min-w-0 flex-1">
-        <p className={cx('truncate text-body font-medium', cancelled ? 'text-fg-muted line-through' : 'text-fg')}>
+        <p className={cx('type-subheading truncate', cancelled ? 'text-fg-muted line-through' : 'text-fg')}>
           {transaction.description}
         </p>
-        <p className="text-caption text-fg-soft">
+        <p className="truncate text-body-sm text-fg-soft">
           {typeLabel} · {formatRelativeDate(transaction.date, today)}, {transaction.time}
           {category ? ` · ${category.name}` : ''}
+          {scheduled || cancelled ? (
+            <span className="ml-1.5 rounded-chip bg-sunken px-1.5 py-0.5 text-caption font-medium">
+              {scheduled ? 'Programado' : 'Anulado'}
+            </span>
+          ) : null}
         </p>
-        {scheduled || cancelled ? (
-          <span className="mt-1.5 inline-block rounded-pill bg-sunken px-2.5 py-1 text-caption leading-none font-medium text-fg-soft">
-            {scheduled ? 'Programado' : 'Anulado'}
-          </span>
-        ) : null}
       </div>
       <p
         className={cx(
-          'type-number shrink-0 text-body',
+          'type-number type-subheading shrink-0 text-right',
           cancelled ? 'text-fg-muted line-through' : income ? 'text-positive' : 'text-fg',
         )}
         aria-label={`${typeLabel} de ${formatMoney(transaction.amount)}`}

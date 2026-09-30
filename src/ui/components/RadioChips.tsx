@@ -50,7 +50,7 @@ export function RadioChips<V extends string>({
             />
             <span
               className={cx(
-                'flex min-h-11 cursor-pointer items-center justify-center rounded-pill px-4 text-body-sm interactive peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-focus',
+                'flex min-h-control-sm cursor-pointer items-center justify-center rounded-pill px-4 text-body-sm font-medium interactive peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-focus',
                 layout === 'segmented' ? 'text-fg-soft' : 'bg-sunken text-fg-soft hover:bg-sunken-hover',
                 TONES[tone(option.value)],
               )}

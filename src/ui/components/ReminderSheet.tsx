@@ -78,7 +78,7 @@ function ReminderForm({ onDone }: { onDone(): void }) {
           {formError}
         </p>
       ) : null}
-      <Button type="submit" block loading={saving}>
+      <Button type="submit" block size="lg" loading={saving}>
         Guardar recordatorio
       </Button>
     </form>

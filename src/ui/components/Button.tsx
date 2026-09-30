@@ -7,20 +7,24 @@ import { cx } from '../cx'
  *  - secondary:   acción de apoyo (arena)
  *  - tertiary:    acción discreta, sin fondo
  *  - destructive: acción irreversible o riesgosa
+ *  - inverse / glass: primaria y secundaria sobre superficie financiera oscura
  */
-export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'destructive'
-export type ButtonSize = 'sm' | 'md'
+export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'destructive' | 'inverse' | 'glass'
+export type ButtonSize = 'sm' | 'md' | 'lg'
 
 const VARIANTS: Record<ButtonVariant, string> = {
   primary: 'bg-action text-on-action hover:bg-action-hover active:bg-action-pressed',
   secondary: 'bg-sunken text-fg hover:bg-sunken-hover active:bg-sunken-hover',
   tertiary: 'bg-transparent text-fg hover:bg-glass active:bg-glass-strong',
   destructive: 'bg-danger-bg text-danger hover:bg-danger/15 active:bg-danger/20',
+  inverse: 'bg-on-panel text-panel hover:bg-white active:bg-sand-200',
+  glass: 'bg-glass-on-panel text-on-panel hover:bg-glass-on-panel-hover active:bg-glass-on-panel-hover',
 }
 
 const SIZES: Record<ButtonSize, string> = {
-  sm: 'min-h-10 gap-1.5 px-5 text-body-sm',
-  md: 'min-h-control-h gap-2 px-7 type-button',
+  sm: 'min-h-control-sm gap-1.5 px-4 text-body-sm font-medium',
+  md: 'min-h-control-md gap-2 px-5 type-button',
+  lg: 'min-h-control-lg gap-2 px-6 type-button',
 }
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -65,9 +69,9 @@ export function Button({
 export type IconButtonSize = 'sm' | 'md' | 'lg'
 
 const ICON_BUTTON_SIZES: Record<IconButtonSize, string> = {
-  sm: 'size-9',
-  md: 'size-11',
-  lg: 'size-14',
+  sm: 'size-control-sm',
+  md: 'size-control-md',
+  lg: 'size-control-lg',
 }
 
 interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
