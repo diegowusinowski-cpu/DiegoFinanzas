@@ -41,13 +41,13 @@ export function DashboardScreen({ onNewTransaction, onNewReminder, onSeeAll }: D
           <BalanceCard balance={finance.balance} loading={loading} />
 
           <section aria-label="Acciones principales" className="grid grid-cols-2 gap-2.5">
-            <Button variant="glass" disabled={loading} onClick={() => onNewTransaction('EXPENSE')}>
-              <Icon name="arrow-up" />
-              Gasto
-            </Button>
             <Button variant="inverse" disabled={loading} onClick={() => onNewTransaction('INCOME')}>
               <Icon name="arrow-down" />
               Ingreso
+            </Button>
+            <Button variant="glass" disabled={loading} onClick={() => onNewTransaction('EXPENSE')}>
+              <Icon name="arrow-up" />
+              Gasto
             </Button>
           </section>
         </div>

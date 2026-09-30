@@ -156,6 +156,15 @@ describe('Dashboard', () => {
     expect(document.body.textContent).not.toMatch(/ARQ/i)
   })
 
+  it('cabecera de cuenta: sin rótulo visible, ARS • Datos de cuenta, y acciones Ingreso | Gasto', async () => {
+    const user = userEvent.setup()
+    await firstRun(user)
+    expect(screen.getByText('ARS • Datos de cuenta')).toBeInTheDocument()
+    expect(screen.getByText('Saldo disponible')).toHaveClass('sr-only')
+    const actions = screen.getByRole('region', { name: 'Acciones principales' })
+    expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Ingreso', 'Gasto'])
+  })
+
   it('el ingreso suma y el gasto resta, y el saldo se actualiza al instante', async () => {
     const user = userEvent.setup()
     await firstRun(user)
