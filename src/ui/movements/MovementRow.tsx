@@ -56,7 +56,7 @@ export function MovementRow({ transaction, today, onOpen }: MovementRowProps) {
         <span className="shrink-0 text-right">
           <span
             className={cx(
-              'type-number type-subheading block',
+              'type-number-row block',
               cancelled ? 'text-fg-muted line-through' : income ? 'text-positive' : 'text-fg',
             )}
           >

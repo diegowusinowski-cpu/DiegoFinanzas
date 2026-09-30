@@ -35,39 +35,51 @@
 /* ── Roles tipográficos ─────────────────────────
  * Cada rol fija tamaño, interlineado, tracking y peso desde tokens. */
 @utility type-money {
+  font-family: var(--font-display-numeric);
+  font-synthesis: none;
   font-size: var(--text-money);
   line-height: var(--text-money--line-height);
   letter-spacing: var(--tracking-money);
   font-weight: var(--font-weight-medium);
   font-variant-numeric: proportional-nums;
-  word-spacing: -0.12em;
+  word-spacing: -0.05em;
 }
 @utility type-money-sm {
+  font-family: var(--font-display-numeric);
+  font-synthesis: none;
   font-size: var(--text-money-sm);
   line-height: 1;
   letter-spacing: var(--tracking-money);
   font-weight: var(--font-weight-medium);
   font-variant-numeric: proportional-nums;
-  word-spacing: -0.12em;
+  word-spacing: -0.05em;
 }
 @utility type-money-cents {
+  font-family: var(--font-display-numeric);
+  font-synthesis: none;
   font-size: var(--text-money-cents);
-  letter-spacing: -0.02em;
+  letter-spacing: 0.02em;
 }
 /* Monto de las pantallas de registro (se achica según la cantidad de caracteres). */
 @utility type-amount {
+  font-family: var(--font-display-numeric);
+  font-synthesis: none;
   font-size: var(--text-amount);
   line-height: 1;
   letter-spacing: var(--tracking-amount);
   font-weight: var(--font-weight-medium);
 }
 @utility type-amount-md {
+  font-family: var(--font-display-numeric);
+  font-synthesis: none;
   font-size: var(--text-amount-md);
   line-height: 1;
   letter-spacing: var(--tracking-amount);
   font-weight: var(--font-weight-medium);
 }
 @utility type-amount-sm {
+  font-family: var(--font-display-numeric);
+  font-synthesis: none;
   font-size: var(--text-amount-sm);
   line-height: 1;
   letter-spacing: var(--tracking-amount);
@@ -113,10 +125,30 @@
   letter-spacing: var(--tracking-button);
   font-weight: var(--font-weight-medium);
 }
+/* NUMERIC DISPLAY genérico: para cualquier cifra financiera suelta. */
+@utility font-numeric {
+  font-family: var(--font-display-numeric);
+  font-synthesis: none;
+  font-variant-numeric: lining-nums;
+}
+
 /* Cifras: proporcionales, como en ARQ; los montos se alinean a la derecha. */
+/* Cifra de fila/lista (montos, cotizaciones): NUMERIC DISPLAY a tamaño de texto. */
+@utility type-number-row {
+  font-family: var(--font-display-numeric);
+  font-synthesis: none;
+  font-size: 1rem;
+  line-height: 1.3;
+  letter-spacing: 0.02em;
+  word-spacing: -0.03em;
+  font-weight: var(--font-weight-regular);
+}
+
 @utility type-number {
+  font-family: var(--font-display-numeric);
+  font-synthesis: none;
   font-variant-numeric: proportional-nums;
-  word-spacing: -0.08em;
+  word-spacing: -0.03em;
   letter-spacing: -0.01em;
   font-weight: var(--font-weight-medium);
 }

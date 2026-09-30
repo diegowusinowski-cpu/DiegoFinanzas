@@ -60,13 +60,13 @@ export function RatesCard({ state, onRefresh }: { state: RateState; onRefresh():
             <dl className="flex shrink-0 gap-5 text-right">
               <div className="flex flex-col-reverse gap-0.5">
                 <dt className="text-caption text-fg-soft">Compra</dt>
-                <dd className="type-number type-subheading text-fg" data-testid="rate-buy">
+                <dd className="type-number-row text-fg" data-testid="rate-buy">
                   {formatRate(state.rate.buy)}
                 </dd>
               </div>
               <div className="flex flex-col-reverse gap-0.5">
                 <dt className="text-caption text-fg-soft">Venta</dt>
-                <dd className="type-number type-subheading text-fg" data-testid="rate-sell">
+                <dd className="type-number-row text-fg" data-testid="rate-sell">
                   {formatRate(state.rate.sell)}
                 </dd>
               </div>

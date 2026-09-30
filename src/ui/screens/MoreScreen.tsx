@@ -22,7 +22,7 @@ export function MoreScreen() {
           </span>
           <div>
             <p className="type-subheading text-fg">{profile.displayName}</p>
-            <p className="type-number text-body-sm text-fg-soft">{maskPhone(profile.phone)}</p>
+            <p className="text-body-sm text-fg-soft">{maskPhone(profile.phone)}</p>
           </div>
         </div>
       ) : null}
