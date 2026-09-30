@@ -186,22 +186,16 @@ describe('Dashboard', () => {
     expect(screen.getByText('Todavía no hay movimientos')).toBeInTheDocument()
   })
 
-  it('el "+" central pregunta Ingreso o Gasto y abre el flujo', async () => {
+  it('el "+" central abre la sección Préstamos', async () => {
     const user = setupUser()
     await firstRun(user)
-    await user.click(screen.getByRole('button', { name: 'Registrar movimiento' }))
-    const chooser = await screen.findByRole('dialog', { name: 'Nuevo movimiento' })
-    await user.click(within(chooser).getByRole('button', { name: /^Gasto/ }))
-    expect(await screen.findByRole('heading', { name: 'Elegí el país' })).toBeInTheDocument()
-  })
-
-  it('el "+" se puede cerrar con Escape', async () => {
-    const user = setupUser()
-    await firstRun(user)
-    await user.click(screen.getByRole('button', { name: 'Registrar movimiento' }))
-    await screen.findByRole('dialog')
-    await user.keyboard('{Escape}')
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Abrir préstamos' }))
+    expect(await screen.findByRole('heading', { name: 'Préstamos', level: 1 })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Calculadora financiera/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Nuevo préstamo/ })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Cerrar préstamos' }))
+    expect(screen.queryByRole('heading', { name: 'Préstamos', level: 1 })).not.toBeInTheDocument()
+    expect(screen.getByTestId('balance')).toBeInTheDocument()
   })
 
   it('los movimientos y el saldo sobreviven a un reinicio de la app', async () => {
@@ -275,7 +269,7 @@ describe('Navegación', () => {
     expect(within(nav).getAllByRole('button').map((b) => b.getAttribute('aria-label') ?? b.textContent)).toEqual([
       'Inicio',
       'Movimientos',
-      'Registrar movimiento',
+      'Abrir préstamos',
       'Más',
     ])
 

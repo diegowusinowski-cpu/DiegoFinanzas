@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_CATEGORIES, buildReminder, buildTransaction, categoriesForType } from '@/domain'
+import { DEFAULT_CATEGORIES, buildLoanBundle, buildReminder, buildTransaction, categoriesForType } from '@/domain'
 import { createLocalRepositories, DEFAULT_ACCOUNT_ID, STORAGE_KEYS } from './localRepositories'
 import { MemoryStorage, StorageCorruptedError } from './storage'
 
@@ -98,5 +98,47 @@ describe('compatibilidad con datos de la primera versión', () => {
       'Suscripciones y tecnología',
     ])
     expect(categoriesForType(list, 'INCOME')).toHaveLength(5)
+  })
+})
+
+describe('préstamos: persistencia atómica', () => {
+  const bundle = () =>
+    buildLoanBundle(
+      { accountId: 'acc-main', borrowerName: 'Ana', principalAmount: 1_000_000, installmentCount: 4, loanDate: '2026-10-02', dueDate: '2026-12-02' },
+      { now: NOW, newId: (() => { let n = 0; return () => `l-${++n}` })() },
+    )
+
+  it('guarda préstamo, cuotas y movimiento juntos y los recupera', async () => {
+    const storage = new MemoryStorage()
+    const repos = createLocalRepositories(storage)
+    const b = bundle()
+    await repos.loans.create(b)
+    const again = createLocalRepositories(storage)
+    expect(await again.loans.listLoans()).toEqual([b.loan])
+    expect(await again.loans.listInstallments()).toHaveLength(4)
+    expect((await again.transactions.list()).map((t) => t.id)).toEqual([b.transaction.id])
+  })
+
+  it('si falla en medio, no queda nada a medias (todo o nada)', async () => {
+    const storage = new MemoryStorage()
+    const repos = createLocalRepositories(storage)
+    await repos.transactions.add(tx('previo'))
+    const failing = {
+      getItem: (k: string) => storage.getItem(k),
+      removeItem: (k: string) => storage.removeItem(k),
+      setItem: (k: string, v: string) => {
+        if (k === STORAGE_KEYS.loans) throw new Error('cuota de almacenamiento')
+        storage.setItem(k, v)
+      },
+    }
+    await expect(createLocalRepositories(failing).loans.create(bundle())).rejects.toThrow()
+    const check = createLocalRepositories(storage)
+    expect(await check.loans.listLoans()).toEqual([])
+    expect(await check.loans.listInstallments()).toEqual([])
+    expect((await check.transactions.list()).map((t) => t.id)).toEqual(['previo']) // sin el gasto del préstamo
+  })
+
+  it('no expone borrado', () => {
+    expect(createLocalRepositories(new MemoryStorage()).loans).not.toHaveProperty('delete')
   })
 })

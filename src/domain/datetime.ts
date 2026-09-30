@@ -38,6 +38,12 @@ export function localDateTimeToDate(date: LocalDate, time: LocalTime): Date {
   return new Date(y, m - 1, d, hh, mm)
 }
 
+/** Suma `days` días de calendario a una fecha local. */
+export function addDays(date: LocalDate, days: number): LocalDate {
+  const [y, m, d] = date.split('-').map(Number) as [number, number, number]
+  return toLocalDate(new Date(y, m - 1, d + days))
+}
+
 /** Diferencia en días de calendario entre dos fechas locales (`b - a`). */
 export function diffInDays(a: LocalDate, b: LocalDate): number {
   const [ay, am, ad] = a.split('-').map(Number) as [number, number, number]

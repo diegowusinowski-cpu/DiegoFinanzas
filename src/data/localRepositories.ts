@@ -1,9 +1,10 @@
 import { DEFAULT_CATEGORIES, toIso } from '@/domain'
-import type { Account, Category, Reminder, Transaction } from '@/domain'
+import type { Account, Category, Loan, LoanBundle, LoanInstallment, Reminder, Transaction } from '@/domain'
 import { LocalCollection } from './localCollection'
 import type {
   AccountRepository,
   CategoryRepository,
+  LoanRepository,
   ReminderRepository,
   Repositories,
   TransactionRepository,
@@ -15,6 +16,8 @@ export const STORAGE_KEYS = {
   accounts: 'dwf.v1.accounts',
   categories: 'dwf.v1.categories',
   reminders: 'dwf.v1.reminders',
+  loans: 'dwf.v1.loans',
+  installments: 'dwf.v1.loan-installments',
 } as const
 
 export const DEFAULT_ACCOUNT_ID = 'acc-main'
@@ -27,6 +30,7 @@ function withFlowDefaults(t: Transaction): Transaction {
     currency: t.currency ?? 'ARS',
     holder: t.holder ?? 'INDIVIDUAL',
     paymentMethod: t.paymentMethod ?? null,
+    loanId: t.loanId ?? null,
   }
 }
 
@@ -103,11 +107,45 @@ class LocalReminderRepository implements ReminderRepository {
   }
 }
 
+class LocalLoanRepository implements LoanRepository {
+  private readonly loans: LocalCollection<Loan>
+  private readonly installments: LocalCollection<LoanInstallment>
+  private readonly transactions: LocalCollection<Transaction>
+  constructor(private readonly storage: KeyValueStorage) {
+    this.loans = new LocalCollection(storage, STORAGE_KEYS.loans)
+    this.installments = new LocalCollection(storage, STORAGE_KEYS.installments)
+    this.transactions = new LocalCollection(storage, STORAGE_KEYS.transactions)
+  }
+  async listLoans() {
+    return this.loans.read()
+  }
+  async listInstallments() {
+    return this.installments.read()
+  }
+  async create({ loan, installments, transaction }: LoanBundle) {
+    const keys = [STORAGE_KEYS.loans, STORAGE_KEYS.installments, STORAGE_KEYS.transactions]
+    const snapshot = keys.map((key) => [key, this.storage.getItem(key)] as const)
+    try {
+      this.transactions.upsertMany([transaction])
+      this.installments.upsertMany(installments)
+      this.loans.upsertMany([loan])
+    } catch (error) {
+      // Todo o nada: si algo falla, se restaura el estado previo de las tres colecciones.
+      for (const [key, raw] of snapshot) {
+        if (raw === null) this.storage.removeItem(key)
+        else this.storage.setItem(key, raw)
+      }
+      throw error
+    }
+  }
+}
+
 export function createLocalRepositories(storage: KeyValueStorage): Repositories {
   return {
     transactions: new LocalTransactionRepository(storage),
     accounts: new LocalAccountRepository(storage),
     categories: new LocalCategoryRepository(storage),
     reminders: new LocalReminderRepository(storage),
+    loans: new LocalLoanRepository(storage),
   }
 }

@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   activeReminders,
+  buildLoanBundle,
   buildReminder,
   buildTransaction,
   cancelTransaction,
@@ -8,13 +9,20 @@ import {
   latestTransactions,
   settleDueTransactions,
   sortByRecency,
+  sortLoans,
   toIso,
   toLocalDate,
+  validateNewLoan,
   validateNewReminder,
   validateNewTransaction,
   type Account,
   type Category,
   type CurrencyCode,
+  type Loan,
+  type LoanBundle,
+  type LoanErrors,
+  type LoanInstallment,
+  type NewLoanInput,
   type MinorUnits,
   type NewReminderInput,
   type NewTransactionInput,
@@ -53,6 +61,14 @@ interface FinanceContextValue {
   cancelTransaction(id: string): Promise<void>
   addReminder(input: NewReminderInput): Promise<Result<Reminder, ActionError<ReminderErrors>>>
   dismissReminder(id: string): Promise<void>
+  /** Préstamos (más recientes primero) y todas sus cuotas. */
+  loans: Loan[]
+  installments: LoanInstallment[]
+  /**
+   * Crea el préstamo, sus cuotas y el movimiento GASTO por el monto prestado,
+   * todo de una vez. El interés no es un movimiento.
+   */
+  createLoan(input: Omit<NewLoanInput, 'accountId'>): Promise<Result<LoanBundle, ActionError<LoanErrors>>>
 }
 
 const FinanceContext = createContext<FinanceContextValue | null>(null)
@@ -67,6 +83,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   const [categories, setCategories] = useState<Category[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [reminders, setReminders] = useState<Reminder[]>([])
+  const [loans, setLoans] = useState<Loan[]>([])
+  const [installments, setInstallments] = useState<LoanInstallment[]>([])
   const [today, setToday] = useState(() => toLocalDate(now()))
   const [reloadKey, setReloadKey] = useState(0)
   const transactionsRef = useRef<Transaction[]>([])
@@ -79,11 +97,13 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     void (async () => {
       try {
         const current = now()
-        const [accountList, categoryList, storedTransactions, storedReminders] = await Promise.all([
+        const [accountList, categoryList, storedTransactions, storedReminders, storedLoans, storedInstallments] = await Promise.all([
           repositories.accounts.ensureDefault(current),
           repositories.categories.list(),
           repositories.transactions.list(),
           repositories.reminders.list(),
+          repositories.loans.listLoans(),
+          repositories.loans.listInstallments(),
         ])
         const settled = settleDueTransactions(storedTransactions, current)
         if (settled.changed.length > 0) await repositories.transactions.update(settled.changed)
@@ -92,6 +112,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         setCategories(categoryList)
         setTransactions(settled.transactions)
         setReminders(storedReminders)
+        setLoans(storedLoans)
+        setInstallments(storedInstallments)
         setToday(toLocalDate(current))
         setErrorMessage(null)
         setStatus('ready')
@@ -135,6 +157,29 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       }
       setTransactions((prev) => [...prev, transaction])
       return { ok: true, value: transaction }
+    },
+    [primaryAccount, categories, repositories, now, newId],
+  )
+
+  const createLoan = useCallback<FinanceContextValue['createLoan']>(
+    async (input) => {
+      if (!primaryAccount) return { ok: false, error: { message: 'No hay una cuenta disponible.' } }
+      const full: NewLoanInput = { ...input, accountId: primaryAccount.id }
+      const errors = validateNewLoan(full)
+      if (Object.keys(errors).length > 0) return { ok: false, error: { fields: errors } }
+      const bundle = buildLoanBundle(full, { now: now(), newId })
+      if (Object.keys(validateNewTransaction(bundle.transaction, categories)).length > 0) {
+        return { ok: false, error: { message: 'No se pudo registrar el movimiento del préstamo.' } }
+      }
+      try {
+        await repositories.loans.create(bundle)
+      } catch {
+        return { ok: false, error: { message: PERSIST_ERROR } }
+      }
+      setTransactions((prev) => [...prev, bundle.transaction])
+      setLoans((prev) => [...prev, bundle.loan])
+      setInstallments((prev) => [...prev, ...bundle.installments])
+      return { ok: true, value: bundle }
     },
     [primaryAccount, categories, repositories, now, newId],
   )
@@ -199,8 +244,11 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       cancelTransaction: cancel,
       addReminder,
       dismissReminder,
+      loans: sortLoans(loans),
+      installments,
+      createLoan,
     }),
-    [status, errorMessage, accounts, primaryAccount, categories, transactions, reminders, today, addTransaction, cancel, addReminder, dismissReminder],
+    [status, errorMessage, accounts, primaryAccount, categories, transactions, reminders, today, addTransaction, cancel, addReminder, dismissReminder, loans, installments, createLoan],
   )
 
   return <FinanceContext.Provider value={value}>{children}</FinanceContext.Provider>

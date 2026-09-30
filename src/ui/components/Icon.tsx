@@ -24,6 +24,10 @@ export type IconName =
   | 'check'
   | 'user'
   | 'filter'
+  | 'calculator'
+  | 'share'
+  | 'download'
+  | 'calendar'
   | 'search'
   | 'transport'
   | 'leisure'
@@ -103,6 +107,30 @@ const PATHS: Record<IconName, ReactNode> = {
   'arrow-left': <path d="M19 12H5M12 5l-7 7 7 7" />,
   'arrow-right': <path d="M5 12h14M12 5l7 7-7 7" />,
   check: <path d="m5 12.5 4.5 4.5L19 7.5" />,
+  calculator: (
+    <>
+      <rect x="5" y="3.5" width="14" height="17" rx="2.5" />
+      <path d="M8.5 7.5h7M8.5 12h.01M12 12h.01M15.5 12h.01M8.5 16h.01M12 16h.01M15.5 16h.01" />
+    </>
+  ),
+  share: (
+    <>
+      <path d="M12 15V4M8 7.5 12 3.5l4 4" />
+      <path d="M6 11H5.5A1.5 1.5 0 0 0 4 12.5v6A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5v-6a1.5 1.5 0 0 0-1.5-1.5H18" />
+    </>
+  ),
+  download: (
+    <>
+      <path d="M12 4v11M8 11.5l4 4 4-4" />
+      <path d="M5 19.5h14" />
+    </>
+  ),
+  calendar: (
+    <>
+      <rect x="3.5" y="5" width="17" height="15.5" rx="2.5" />
+      <path d="M3.5 10h17M8 3v4M16 3v4" />
+    </>
+  ),
   /* Tres líneas horizontales de largo decreciente (ordenar/filtrar). */
   filter: <path d="M4 7h16M7 12h10M10 17h4" />,
   search: (

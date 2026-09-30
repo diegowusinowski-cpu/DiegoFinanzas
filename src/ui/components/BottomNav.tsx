@@ -53,7 +53,7 @@ export function BottomNav({ active, onSelect, onAdd }: BottomNavProps) {
           <button
             type="button"
             onClick={onAdd}
-            aria-label="Registrar movimiento"
+            aria-label="Abrir préstamos"
             className="interactive mx-2 grid size-control-md place-items-center rounded-pill bg-action text-on-action hover:bg-action-hover active:bg-action-pressed"
           >
             <Icon name="plus" size="lg" />

@@ -9,7 +9,7 @@ import { Button } from './components/Button'
 import { Card } from './components/Card'
 import { ReminderSheet } from './components/ReminderSheet'
 import { MovementFlow } from './flow/MovementFlow'
-import { TypeChooserSheet } from './flow/TypeChooserSheet'
+import { LoansSection } from './loans/LoansSection'
 import { DashboardScreen } from './screens/DashboardScreen'
 import { LoginScreen } from './screens/LoginScreen'
 import { MoreScreen } from './screens/MoreScreen'
@@ -41,7 +41,7 @@ function Shell() {
   const { status, errorMessage, reload } = useFinance()
   const [tab, setTab] = useState<Tab>('home')
   const [flowType, setFlowType] = useState<TransactionType | null>(null)
-  const [chooserOpen, setChooserOpen] = useState(false)
+  const [loansOpen, setLoansOpen] = useState(false)
   const [reminderOpen, setReminderOpen] = useState(false)
 
   return (
@@ -70,15 +70,8 @@ function Shell() {
         <MoreScreen />
       )}
 
-      <BottomNav active={tab} onSelect={setTab} onAdd={() => setChooserOpen(true)} />
-      <TypeChooserSheet
-        open={chooserOpen}
-        onClose={() => setChooserOpen(false)}
-        onSelect={(type) => {
-          setChooserOpen(false)
-          setFlowType(type)
-        }}
-      />
+      <BottomNav active={tab} onSelect={setTab} onAdd={() => setLoansOpen(true)} />
+      {loansOpen ? <LoansSection onClose={() => setLoansOpen(false)} /> : null}
       {flowType ? <MovementFlow type={flowType} onClose={() => setFlowType(null)} /> : null}
       <ReminderSheet open={reminderOpen} onClose={() => setReminderOpen(false)} />
     </div>

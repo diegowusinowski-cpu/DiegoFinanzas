@@ -1,4 +1,4 @@
-import type { Account, Category, Reminder, Transaction } from '@/domain'
+import type { Account, Category, Loan, LoanBundle, LoanInstallment, Reminder, Transaction } from '@/domain'
 
 /**
  * Contratos de persistencia. Son asíncronos a propósito: hoy los respalda
@@ -30,9 +30,21 @@ export interface ReminderRepository {
   update(reminder: Reminder): Promise<void>
 }
 
+/**
+ * Préstamos y sus cuotas. Como un préstamo también genera un movimiento GASTO,
+ * `create` guarda préstamo + cuotas + movimiento de forma atómica (todo o nada).
+ * No hay `delete`: los préstamos y cuotas se conservan siempre.
+ */
+export interface LoanRepository {
+  listLoans(): Promise<Loan[]>
+  listInstallments(): Promise<LoanInstallment[]>
+  create(bundle: LoanBundle): Promise<void>
+}
+
 export interface Repositories {
   transactions: TransactionRepository
   accounts: AccountRepository
   categories: CategoryRepository
   reminders: ReminderRepository
+  loans: LoanRepository
 }

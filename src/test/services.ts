@@ -2,6 +2,8 @@ import { createLocalRepositories } from '@/data/localRepositories'
 import { MemoryStorage } from '@/data/storage'
 import type { AppServices } from '@/services/container'
 import { LocalPinAuthService } from '@/services/localPinAuth'
+import type { Loan } from '@/domain'
+import type { ReceiptService, ShareService } from '@/services/receipt'
 import { RateUnavailableError, type ExchangeRate, type ExchangeRateProvider } from '@/services/rates'
 
 export const SAMPLE_RATE: ExchangeRate = {
@@ -20,6 +22,35 @@ export function fakeRates(behavior: 'ready' | 'unavailable' = 'ready'): Exchange
   }
 }
 
+/** Comprobante de prueba: registra los préstamos recibidos y devuelve un PNG falso. */
+export function fakeReceipts() {
+  const rendered: Loan[] = []
+  const service: ReceiptService = {
+    render: (loan) => {
+      rendered.push(loan)
+      return Promise.resolve(new window.Blob(['png'], { type: 'image/png' }))
+    },
+  }
+  return { service, rendered }
+}
+
+/** Compartir de prueba: `canShare` simula si el navegador soporta Web Share con archivos. */
+export function fakeSharing(canShare: boolean) {
+  const shared: Array<{ file: File; title: string }> = []
+  const downloads: Array<{ blob: Blob; filename: string }> = []
+  const service: ShareService = {
+    canShareFile: () => canShare,
+    shareFile: (file, message) => {
+      shared.push({ file, title: message.title })
+      return Promise.resolve('shared')
+    },
+    download: (blob, filename) => {
+      downloads.push({ blob, filename })
+    },
+  }
+  return { service, shared, downloads }
+}
+
 /** Servicios en memoria con un reloj que avanza 1 s por lectura (determinista). */
 export function createTestServices(over: Partial<AppServices> = {}): AppServices {
   const storage = new MemoryStorage()
@@ -30,6 +61,8 @@ export function createTestServices(over: Partial<AppServices> = {}): AppServices
     repositories: createLocalRepositories(storage),
     auth: new LocalPinAuthService(storage),
     rates: fakeRates(),
+    receipts: fakeReceipts().service,
+    sharing: fakeSharing(false).service,
     session: new MemoryStorage(),
     persistent: true,
     now: () => new Date(base + tick++ * 1000),

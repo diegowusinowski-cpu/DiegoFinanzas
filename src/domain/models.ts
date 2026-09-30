@@ -69,6 +69,8 @@ export interface Transaction {
   holder: AccountHolder
   /** `null` en movimientos anteriores al flujo de registro completo. */
   paymentMethod: PaymentMethod | null
+  /** Préstamo que originó el movimiento (salida al prestar; cobros de cuotas en el futuro). */
+  loanId: EntityId | null
   date: LocalDate
   time: LocalTime
   status: TransactionStatus
@@ -111,4 +113,47 @@ export interface Profile {
   /** Teléfono en formato E.164 sin espacios, p. ej. `+5491112345678`. */
   phone: string
   displayName: string
+}
+
+/** Estados de un préstamo. Hoy solo se crea `ACTIVE`; los demás quedan preparados. */
+export const LOAN_STATUSES = ['ACTIVE', 'COMPLETED', 'CANCELLED'] as const
+export type LoanStatus = (typeof LOAN_STATUSES)[number]
+
+/** Estados de una cuota. Hoy solo se crea `PENDING`; `PAID` y `OVERDUE` quedan preparados. */
+export const INSTALLMENT_STATUSES = ['PENDING', 'PAID', 'OVERDUE'] as const
+export type InstallmentStatus = (typeof INSTALLMENT_STATUSES)[number]
+
+export interface Loan {
+  id: EntityId
+  borrowerName: string
+  /** Monto efectivamente prestado (lo único que sale de la cuenta). */
+  principalAmount: MinorUnits
+  /** Interés fijo, en porcentaje (70 = 70 %). */
+  interestRate: number
+  interestAmount: MinorUnits
+  /** Monto prestado + interés (lo que se espera cobrar). */
+  totalAmount: MinorUnits
+  installmentCount: number
+  /** Valor de la cuota (la mayor, si el total no divide exacto). */
+  installmentAmount: MinorUnits
+  loanDate: LocalDate
+  dueDate: LocalDate
+  status: LoanStatus
+  currency: CurrencyCode
+  /** Movimiento GASTO que registró la salida del dinero. */
+  transactionId: EntityId
+  createdAt: IsoTimestamp
+  updatedAt: IsoTimestamp
+}
+
+export interface LoanInstallment {
+  id: EntityId
+  loanId: EntityId
+  installmentNumber: number
+  amount: MinorUnits
+  dueDate: LocalDate
+  status: InstallmentStatus
+  paidAt: IsoTimestamp | null
+  /** Movimiento INGRESO del cobro de la cuota (se completará al implementar los cobros). */
+  paymentTransactionId: EntityId | null
 }

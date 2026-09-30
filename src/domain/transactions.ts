@@ -31,6 +31,7 @@ export interface NewTransactionInput {
   currency?: CurrencyCode
   holder?: AccountHolder
   paymentMethod?: PaymentMethod | null
+  loanId?: EntityId | null
 }
 
 export type TransactionField = 'amount' | 'description' | 'categoryId' | 'date' | 'time' | 'type'
@@ -99,6 +100,7 @@ export function buildTransaction(
     currency: input.currency ?? currencyForCountry(input.country ?? 'AR'),
     holder: input.holder ?? 'INDIVIDUAL',
     paymentMethod: input.paymentMethod ?? null,
+    loanId: input.loanId ?? null,
     date: input.date,
     time: input.time,
     status: initialStatus(input.date, input.time, meta.now),
