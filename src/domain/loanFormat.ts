@@ -1,5 +1,6 @@
 import { formatDayMonthTitleCase } from './datetime'
 import { formatMoney } from './money'
+import type { InstallmentView, LoanView } from './loans'
 import type { InstallmentStatus, Loan, LoanStatus, LocalDate } from './models'
 
 /** `2026-10-02` → `2 de Octubre de 2026` */
@@ -24,20 +25,36 @@ export const INSTALLMENT_STATUS_LABEL: Record<InstallmentStatus, string> = {
   OVERDUE: 'Vencida',
 }
 
+export const INSTALLMENT_VIEW_LABEL: Record<InstallmentView, string> = {
+  PENDING: 'Pendiente',
+  NEXT: 'Próxima',
+  OVERDUE: 'Vencida',
+  PAID: 'Pagada',
+}
+
+export const LOAN_VIEW_LABEL: Record<LoanView, string> = {
+  PENDING: 'Pendiente',
+  UPCOMING: 'Próximo',
+  OVERDUE: 'Vencido',
+  COMPLETED: 'Completado',
+}
+
 export interface ReceiptRow {
   label: string
   value: string
 }
 
 /** Filas del comprobante, en el orden en que se muestran (la imagen y las pruebas usan esta misma lista). */
-export function receiptRows(loan: Loan): ReceiptRow[] {
+export function receiptRows(loan: Loan, statusLabel: string): ReceiptRow[] {
   return [
-    { label: 'Prestatario', value: loan.borrowerName },
+    { label: 'Persona', value: loan.borrowerName },
     { label: 'Monto prestado', value: formatMoney(loan.principalAmount) },
-    { label: 'Interés', value: `${loan.interestRate}% · ${formatMoney(loan.interestAmount)}` },
+    { label: `Interés ${loan.interestRate}%`, value: formatMoney(loan.interestAmount) },
     { label: 'Total a devolver', value: formatMoney(loan.totalAmount) },
-    { label: 'Plan de pago', value: installmentPlanText(loan.installmentCount, loan.installmentAmount) },
+    { label: 'Cantidad de cuotas', value: String(loan.installmentCount) },
+    { label: 'Importe de cada cuota', value: formatMoney(loan.installmentAmount) },
     { label: 'Fecha del préstamo', value: formatLoanDate(loan.loanDate) },
-    { label: 'Fecha límite de pago', value: formatLoanDate(loan.dueDate) },
+    { label: 'Fecha límite', value: formatLoanDate(loan.dueDate) },
+    { label: 'Estado', value: statusLabel },
   ]
 }

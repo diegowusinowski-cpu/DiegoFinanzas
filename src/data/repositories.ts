@@ -1,4 +1,4 @@
-import type { Account, Category, Loan, LoanBundle, LoanInstallment, Reminder, Transaction } from '@/domain'
+import type { Account, Category, InstallmentPayment, Loan, LoanBundle, LoanInstallment, Reminder, Transaction } from '@/domain'
 
 /**
  * Contratos de persistencia. Son asíncronos a propósito: hoy los respalda
@@ -39,6 +39,8 @@ export interface LoanRepository {
   listLoans(): Promise<Loan[]>
   listInstallments(): Promise<LoanInstallment[]>
   create(bundle: LoanBundle): Promise<void>
+  /** Cobra una cuota: actualiza cuota + préstamo y registra el ingreso, todo o nada. */
+  recordPayment(payment: InstallmentPayment): Promise<void>
 }
 
 export interface Repositories {

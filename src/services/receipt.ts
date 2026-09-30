@@ -1,8 +1,8 @@
 import type { Loan } from '@/domain'
 
-/** Genera la imagen del comprobante de un préstamo (PNG). */
+/** Genera la imagen del comprobante de un préstamo (PNG); `statusLabel` es su estado actual. */
 export interface ReceiptService {
-  render(loan: Loan): Promise<Blob>
+  render(loan: Loan, statusLabel: string): Promise<Blob>
 }
 
 export type ShareOutcome = 'shared' | 'cancelled'

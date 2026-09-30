@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   activeReminders,
+  buildInstallmentPayment,
   buildLoanBundle,
   buildReminder,
   buildTransaction,
@@ -18,6 +19,7 @@ import {
   type Account,
   type Category,
   type CurrencyCode,
+  type InstallmentPayment,
   type Loan,
   type LoanBundle,
   type LoanErrors,
@@ -69,6 +71,11 @@ interface FinanceContextValue {
    * todo de una vez. El interés no es un movimiento.
    */
   createLoan(input: Omit<NewLoanInput, 'accountId'>): Promise<Result<LoanBundle, ActionError<LoanErrors>>>
+  /**
+   * Marca una cuota como pagada: registra el INGRESO por su importe (sube el saldo), actualiza el
+   * avance del préstamo y lo completa si era la última.
+   */
+  payInstallment(installmentId: string): Promise<Result<InstallmentPayment, ActionError<never>>>
 }
 
 const FinanceContext = createContext<FinanceContextValue | null>(null)
@@ -184,6 +191,35 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     [primaryAccount, categories, repositories, now, newId],
   )
 
+  const payInstallment = useCallback<FinanceContextValue['payInstallment']>(
+    async (installmentId) => {
+      if (!primaryAccount) return { ok: false, error: { message: 'No hay una cuenta disponible.' } }
+      const installment = installments.find((i) => i.id === installmentId)
+      const loan = installment ? loans.find((l) => l.id === installment.loanId) : undefined
+      if (!installment || !loan) return { ok: false, error: { message: 'No encontramos esa cuota.' } }
+      const built = buildInstallmentPayment(
+        loan,
+        installment,
+        installments.filter((i) => i.loanId === loan.id),
+        { now: now(), newId, accountId: primaryAccount.id },
+      )
+      if (!built.ok) {
+        return { ok: false, error: { message: built.error === 'ALREADY_PAID' ? 'Esa cuota ya está pagada.' : 'No encontramos esa cuota.' } }
+      }
+      const payment = built.value
+      try {
+        await repositories.loans.recordPayment(payment)
+      } catch {
+        return { ok: false, error: { message: PERSIST_ERROR } }
+      }
+      setTransactions((prev) => [...prev, payment.transaction])
+      setLoans((prev) => prev.map((l) => (l.id === payment.loan.id ? payment.loan : l)))
+      setInstallments((prev) => prev.map((i) => (i.id === payment.installment.id ? payment.installment : i)))
+      return { ok: true, value: payment }
+    },
+    [primaryAccount, installments, loans, repositories, now, newId],
+  )
+
   const cancel = useCallback(
     async (id: string) => {
       const target = transactionsRef.current.find((t) => t.id === id)
@@ -247,8 +283,9 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       loans: sortLoans(loans),
       installments,
       createLoan,
+      payInstallment,
     }),
-    [status, errorMessage, accounts, primaryAccount, categories, transactions, reminders, today, addTransaction, cancel, addReminder, dismissReminder, loans, installments, createLoan],
+    [status, errorMessage, accounts, primaryAccount, categories, transactions, reminders, today, addTransaction, cancel, addReminder, dismissReminder, loans, installments, createLoan, payInstallment],
   )
 
   return <FinanceContext.Provider value={value}>{children}</FinanceContext.Provider>

@@ -1,4 +1,4 @@
-import { addDays, diffInDays, isValidLocalDate, toLocalTime } from './datetime'
+import { addDays, diffInDays, isValidLocalDate, toLocalDate, toLocalTime } from './datetime'
 import { MAX_MINOR_UNITS } from './money'
 import type {
   EntityId,
@@ -8,7 +8,7 @@ import type {
   MinorUnits,
   Transaction,
 } from './models'
-import { buildTransaction } from './transactions'
+import { MAX_DESCRIPTION_LENGTH, buildTransaction, type Result } from './transactions'
 
 /** Tasa fija de esta primera versión. */
 export const LOAN_INTEREST_PERCENT = 70
@@ -18,6 +18,8 @@ export const MAX_INSTALLMENTS = 360
 export const MAX_BORROWER_NAME_LENGTH = 60
 /** Categoría de gasto con la que se registra la salida del préstamo. */
 export const LOAN_EXPENSE_CATEGORY_ID = 'exp-loans'
+/** Categoría de ingreso con la que se registra el cobro de una cuota. */
+export const LOAN_INCOME_CATEGORY_ID = 'inc-loans'
 
 /** Interés = monto × 70 %, en centavos enteros. */
 export function interestFor(principal: MinorUnits): MinorUnits {
@@ -213,6 +215,132 @@ export function loanProgress(installments: readonly LoanInstallment[]): LoanProg
     pending: sorted.filter((i) => i.status !== 'PAID').length,
     next: sorted.find((i) => i.status !== 'PAID') ?? null,
   }
+}
+
+/** Estado que se muestra de una cuota (se deriva del estado guardado y de la fecha de hoy). */
+export type InstallmentView = 'PENDING' | 'NEXT' | 'OVERDUE' | 'PAID'
+/** Estado que se muestra de un préstamo. */
+export type LoanView = 'PENDING' | 'UPCOMING' | 'OVERDUE' | 'COMPLETED'
+
+/** Una cuota sin pagar es "próxima" si vence dentro de esta cantidad de días (o menos). */
+export const UPCOMING_DAYS = 7
+
+export interface InstallmentWithView {
+  installment: LoanInstallment
+  view: InstallmentView
+}
+
+/**
+ * Estado visible de cada cuota: Pagada; Vencida si su fecha ya pasó sin pagar; Próxima la primera
+ * cuota sin pagar que todavía no venció; Pendiente el resto.
+ */
+export function installmentViews(installments: readonly LoanInstallment[], today: LocalDate): InstallmentWithView[] {
+  const sorted = [...installments].sort((a, b) => a.installmentNumber - b.installmentNumber)
+  let nextAssigned = false
+  return sorted.map((installment) => {
+    if (installment.status === 'PAID') return { installment, view: 'PAID' }
+    if (installment.dueDate < today) return { installment, view: 'OVERDUE' }
+    if (!nextAssigned) {
+      nextAssigned = true
+      return { installment, view: 'NEXT' }
+    }
+    return { installment, view: 'PENDING' }
+  })
+}
+
+/**
+ * Estado visible del préstamo: Completado si no quedan cuotas; Vencido si alguna cuota pasó su fecha
+ * sin pagarse; Próximo si la próxima cuota vence en `UPCOMING_DAYS` días o menos; Pendiente en otro caso.
+ */
+export function loanView(loan: Loan, installments: readonly LoanInstallment[], today: LocalDate): LoanView {
+  if (loan.status !== 'ACTIVE') return 'COMPLETED'
+  const views = installmentViews(installments, today)
+  if (views.length > 0 && views.every((v) => v.view === 'PAID')) return 'COMPLETED'
+  if (views.some((v) => v.view === 'OVERDUE')) return 'OVERDUE'
+  const next = views.find((v) => v.view === 'NEXT')
+  if (next && diffInDays(today, next.installment.dueDate) <= UPCOMING_DAYS) return 'UPCOMING'
+  return 'PENDING'
+}
+
+export interface LoansSummary {
+  /** Suma de los montos realmente prestados (sin interés). */
+  totalLent: MinorUnits
+  /** Suma de las cuotas ya cobradas. */
+  totalCollected: MinorUnits
+  /** Suma de las cuotas todavía sin cobrar. */
+  totalPending: MinorUnits
+  overdueCount: number
+}
+
+export function loansSummary(
+  loans: readonly Loan[],
+  installments: readonly LoanInstallment[],
+  today: LocalDate,
+): LoansSummary {
+  const summary: LoansSummary = { totalLent: 0, totalCollected: 0, totalPending: 0, overdueCount: 0 }
+  for (const loan of loans) {
+    summary.totalLent += loan.principalAmount
+    const own = installmentsOf(loan.id, installments)
+    for (const i of own) {
+      if (i.status === 'PAID') summary.totalCollected += i.amount
+      else summary.totalPending += i.amount
+    }
+    if (loanView(loan, own, today) === 'OVERDUE') summary.overdueCount += 1
+  }
+  return summary
+}
+
+export interface InstallmentPayment {
+  loan: Loan
+  installment: LoanInstallment
+  /** Ingreso por el importe de la cuota: aumenta el saldo. */
+  transaction: Transaction
+}
+
+export type PayInstallmentError = 'NOT_FOUND' | 'ALREADY_PAID'
+
+/**
+ * Arma, sin persistir, el cobro de una cuota: la cuota pasa a PAGADA, se crea el INGRESO por su
+ * importe y el préstamo se completa si era la última cuota pendiente.
+ */
+export function buildInstallmentPayment(
+  loan: Loan,
+  installment: LoanInstallment,
+  loanInstallments: readonly LoanInstallment[],
+  meta: { now: Date; newId: () => EntityId; accountId: EntityId },
+): Result<InstallmentPayment, PayInstallmentError> {
+  if (installment.loanId !== loan.id) return { ok: false, error: 'NOT_FOUND' }
+  if (installment.status === 'PAID') return { ok: false, error: 'ALREADY_PAID' }
+  const { now, newId, accountId } = meta
+  const timestamp = now.toISOString()
+  const label = `Cobro cuota ${installment.installmentNumber}/${loan.installmentCount} - `
+  const name = loan.borrowerName.slice(0, Math.max(0, MAX_DESCRIPTION_LENGTH - label.length))
+
+  const transaction: Transaction = {
+    ...buildTransaction(
+      {
+        accountId,
+        type: 'INCOME',
+        amount: installment.amount,
+        description: `${label}${name}`,
+        categoryId: LOAN_INCOME_CATEGORY_ID,
+        date: toLocalDate(now),
+        time: toLocalTime(now),
+        country: 'AR',
+        currency: 'ARS',
+        holder: 'INDIVIDUAL',
+        paymentMethod: null,
+        loanId: loan.id,
+      },
+      { id: newId(), now },
+    ),
+    status: 'COMPLETED',
+  }
+
+  const paid: LoanInstallment = { ...installment, status: 'PAID', paidAt: timestamp, paymentTransactionId: transaction.id }
+  const allPaid = loanInstallments.every((i) => (i.id === installment.id ? true : i.status === 'PAID'))
+  const updatedLoan: Loan = { ...loan, status: allPaid ? 'COMPLETED' : loan.status, updatedAt: timestamp }
+  return { ok: true, value: { loan: updatedLoan, installment: paid, transaction } }
 }
 
 /** Más recientes primero. */

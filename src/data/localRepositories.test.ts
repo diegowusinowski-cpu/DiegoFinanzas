@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_CATEGORIES, buildLoanBundle, buildReminder, buildTransaction, categoriesForType } from '@/domain'
+import {
+  DEFAULT_CATEGORIES,
+  buildInstallmentPayment,
+  buildLoanBundle,
+  buildReminder,
+  buildTransaction,
+  categoriesForType,
+  type InstallmentPayment,
+} from '@/domain'
 import { createLocalRepositories, DEFAULT_ACCOUNT_ID, STORAGE_KEYS } from './localRepositories'
 import { MemoryStorage, StorageCorruptedError } from './storage'
 
@@ -136,6 +144,47 @@ describe('préstamos: persistencia atómica', () => {
     expect(await check.loans.listLoans()).toEqual([])
     expect(await check.loans.listInstallments()).toEqual([])
     expect((await check.transactions.list()).map((t) => t.id)).toEqual(['previo']) // sin el gasto del préstamo
+  })
+
+  const payment = (b: ReturnType<typeof bundle>): InstallmentPayment => {
+    const result = buildInstallmentPayment(b.loan, b.installments[0]!, b.installments, {
+      now: new Date(2026, 10, 7, 9, 0),
+      newId: () => 'pago',
+      accountId: 'acc-main',
+    })
+    if (!result.ok) throw new Error('debió cobrar')
+    return result.value
+  }
+
+  it('recordPayment guarda cuota, préstamo e ingreso juntos', async () => {
+    const storage = new MemoryStorage()
+    const repos = createLocalRepositories(storage)
+    const b = bundle()
+    await repos.loans.create(b)
+    await repos.loans.recordPayment(payment(b))
+    const again = createLocalRepositories(storage)
+    const installments = await again.loans.listInstallments()
+    expect(installments.filter((i) => i.status === 'PAID').map((i) => i.installmentNumber)).toEqual([1])
+    expect((await again.transactions.list()).map((t) => t.id).sort()).toEqual([b.transaction.id, 'pago'].sort())
+  })
+
+  it('si el cobro falla en medio, la cuota sigue pendiente y no hay ingreso', async () => {
+    const storage = new MemoryStorage()
+    const b = bundle()
+    await createLocalRepositories(storage).loans.create(b)
+    const failing = {
+      getItem: (k: string) => storage.getItem(k),
+      removeItem: (k: string) => storage.removeItem(k),
+      setItem: (k: string, v: string) => {
+        if (k === STORAGE_KEYS.loans) throw new Error('cuota de almacenamiento')
+        storage.setItem(k, v)
+      },
+    }
+    await expect(createLocalRepositories(failing).loans.recordPayment(payment(b))).rejects.toThrow()
+    const check = createLocalRepositories(storage)
+    // El préstamo no se pudo reescribir, pero cuotas e ingresos se restauran.
+    expect((await check.loans.listInstallments()).every((i) => i.status === 'PENDING')).toBe(true)
+    expect((await check.transactions.list()).map((t) => t.id)).toEqual([b.transaction.id])
   })
 
   it('no expone borrado', () => {

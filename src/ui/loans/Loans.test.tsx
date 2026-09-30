@@ -37,8 +37,10 @@ async function setup({ canShare = false, withBalance = true } = {}) {
   return { user, services, receipts, sharing }
 }
 
+const navButton = (name: string) => within(screen.getByRole('navigation')).getByRole('button', { name })
+
 async function openLoans(user: UserEvent) {
-  await user.click(screen.getByRole('button', { name: 'Abrir préstamos' }))
+  await user.click(navButton('Préstamos'))
   await screen.findByRole('heading', { name: 'Préstamos', level: 1 })
 }
 
@@ -70,14 +72,19 @@ async function createLoan(user: UserEvent, input: LoanInput = EXAMPLE) {
 
 async function closeReceiptToHome(user: UserEvent) {
   await user.click(screen.getByRole('button', { name: 'Listo' }))
-  await user.click(await screen.findByRole('button', { name: 'Cerrar préstamos' }))
+  await user.click(navButton('Inicio'))
   await screen.findByTestId('balance')
 }
 
-describe('Préstamos: entrada', () => {
-  it('el "+" abre Préstamos con las dos acciones principales', async () => {
+describe('Préstamos: sección principal', () => {
+  it('es una pestaña de la barra inferior (no está en el "+") con resumen y acciones', async () => {
     const { user } = await setup()
     await openLoans(user)
+    expect(navButton('Préstamos')).toHaveAttribute('aria-current', 'page')
+    expect(navButton('Inicio')).not.toHaveAttribute('aria-current')
+    expect(screen.getByLabelText('Resumen de préstamos')).toBeInTheDocument()
+    expect(screen.getByTestId('loans-total-lent')).toHaveTextContent('$ 0,00')
+    expect(screen.getByTestId('loans-overdue-count')).toHaveTextContent('0')
     expect(screen.getByRole('button', { name: /^Calculadora financiera/ })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^Nuevo préstamo/ })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Mis préstamos' })).toBeInTheDocument()
@@ -109,7 +116,7 @@ describe('Calculadora financiera', () => {
     expect(await services.repositories.loans.listLoans()).toHaveLength(0)
     expect(await services.repositories.transactions.list()).toHaveLength(1) // solo el saldo previo
     await user.click(screen.getByRole('button', { name: 'Listo' }))
-    await user.click(await screen.findByRole('button', { name: 'Cerrar préstamos' }))
+    await user.click(navButton('Inicio'))
     expect(balance()).toBe('$ 500.000,00')
   })
 
@@ -290,22 +297,25 @@ describe('Comprobante', () => {
     const dialog = screen.getByRole('dialog', { name: 'Comprobante de préstamo' })
     expect(within(dialog).getByRole('heading', { name: 'Préstamo creado' })).toBeInTheDocument()
     expect(await within(dialog).findByRole('img', { name: 'Comprobante de préstamo' })).toBeInTheDocument()
-    expect(receipts.rendered[0]).toMatchObject({ borrowerName: 'Carlos Mendoza', totalAmount: 17_000_000 })
+    expect(receipts.rendered[0]?.loan).toMatchObject({ borrowerName: 'Carlos Mendoza', totalAmount: 17_000_000 })
+    expect(receipts.rendered[0]?.statusLabel).toBe('Pendiente')
   })
 
   it('las filas del comprobante', async () => {
     const { user, receipts } = await setup()
     await openLoans(user)
     await createLoan(user)
-    const loan = receipts.rendered[0]!
-    expect(receiptRows(loan)).toEqual([
-      { label: 'Prestatario', value: 'Carlos Mendoza' },
+    const { loan, statusLabel } = receipts.rendered[0]!
+    expect(receiptRows(loan, statusLabel)).toEqual([
+      { label: 'Persona', value: 'Carlos Mendoza' },
       { label: 'Monto prestado', value: '$ 100.000,00' },
-      { label: 'Interés', value: '70% · $ 70.000,00' },
+      { label: 'Interés 70%', value: '$ 70.000,00' },
       { label: 'Total a devolver', value: '$ 170.000,00' },
-      { label: 'Plan de pago', value: '10 cuotas de $ 17.000,00' },
+      { label: 'Cantidad de cuotas', value: '10' },
+      { label: 'Importe de cada cuota', value: '$ 17.000,00' },
       { label: 'Fecha del préstamo', value: '2 de Octubre de 2026' },
-      { label: 'Fecha límite de pago', value: '2 de Abril de 2027' },
+      { label: 'Fecha límite', value: '2 de Abril de 2027' },
+      { label: 'Estado', value: 'Pendiente' },
     ])
   })
 
@@ -351,7 +361,7 @@ describe('Comprobante', () => {
 })
 
 describe('Mis préstamos', () => {
-  it('lista persona, montos, cuotas, próxima cuota y estado', async () => {
+  it('lista persona, monto original, total, progreso, próxima cuota, vencimiento y estado', async () => {
     const { user } = await setup()
     await openLoans(user)
     await createLoan(user)
@@ -359,14 +369,14 @@ describe('Mis préstamos', () => {
     const card = await screen.findByRole('button', { name: 'Préstamo de Carlos Mendoza. Ver detalle' })
     const c = within(card)
     expect(c.getByText('Carlos Mendoza')).toBeInTheDocument()
-    expect(c.getByText('$ 100.000,00')).toBeInTheDocument()
-    expect(c.getByText('prestados')).toBeInTheDocument()
+    expect(c.getByText('Original $ 100.000,00')).toBeInTheDocument()
     expect(c.getByText('$ 170.000,00')).toBeInTheDocument()
-    expect(c.getByText('a devolver')).toBeInTheDocument()
-    expect(c.getByText('10 cuotas')).toBeInTheDocument()
-    expect(c.getByText('Próxima cuota: $ 17.000,00')).toBeInTheDocument()
-    expect(c.getByText(/^Vence: \d+ de \w+/)).toBeInTheDocument()
-    expect(c.getByText('Activo')).toBeInTheDocument()
+    expect(c.getByText('A devolver')).toBeInTheDocument()
+    expect(c.getByText('0 de 10 cuotas pagadas')).toBeInTheDocument()
+    expect(c.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0')
+    expect(card).toHaveTextContent('Próxima cuota: $ 17.000,00 · 20 de Octubre')
+    expect(card).toHaveTextContent('Vence: 2 de Abril de 2027')
+    expect(c.getByText('Pendiente')).toBeInTheDocument()
     expect(screen.queryByText('Todavía no hay préstamos')).not.toBeInTheDocument()
   })
 
@@ -396,7 +406,9 @@ describe('Mis préstamos', () => {
     expect(items[0]).toHaveTextContent('$ 17.000,00')
     expect(items[9]).toHaveTextContent('Cuota 10 de 10')
     expect(items[9]).toHaveTextContent('Vence: 2 de Abril de 2027')
-    items.forEach((item) => expect(within(item).getByText('Pendiente')).toBeInTheDocument())
+    expect(within(items[0]!).getByRole('button', { name: 'Marcar cuota 1 como pagada' })).toBeInTheDocument()
+    expect(within(items[0]!).getByText('Próxima')).toBeInTheDocument()
+    items.slice(1).forEach((item) => expect(within(item).getByText('Pendiente')).toBeInTheDocument())
   })
 
   it('"Ver comprobante" abre el comprobante asociado y vuelve al detalle', async () => {
@@ -409,7 +421,7 @@ describe('Mis préstamos', () => {
     const dialog = await screen.findByRole('dialog', { name: 'Comprobante de préstamo' })
     expect(within(dialog).getByRole('heading', { name: 'Comprobante' })).toBeInTheDocument()
     expect(await within(dialog).findByRole('img', { name: 'Comprobante de préstamo' })).toBeInTheDocument()
-    expect(receipts.rendered.at(-1)?.borrowerName).toBe('Carlos Mendoza')
+    expect(receipts.rendered.at(-1)?.loan.borrowerName).toBe('Carlos Mendoza')
     await user.click(within(dialog).getByRole('button', { name: 'Cerrar' }))
     expect(await screen.findByRole('dialog', { name: 'Detalle del préstamo' })).toBeInTheDocument()
   })
@@ -424,7 +436,7 @@ describe('Mis préstamos', () => {
     mount(services)
     await screen.findByTestId('balance')
     expect(balance()).toBe('$ 400.000,00')
-    await user.click(screen.getByRole('button', { name: 'Abrir préstamos' }))
+    await user.click(navButton('Préstamos'))
     const card = await screen.findByRole('button', { name: 'Préstamo de Carlos Mendoza. Ver detalle' })
     await user.click(card)
     const detail = within(await screen.findByRole('dialog', { name: 'Detalle del préstamo' }))
@@ -441,5 +453,143 @@ describe('Mis préstamos', () => {
     const cards = (await screen.findAllByRole('button', { name: /^Préstamo de / })).map((b) => b.getAttribute('aria-label'))
     expect(cards).toEqual(['Préstamo de Ana Pérez. Ver detalle', 'Préstamo de Carlos Mendoza. Ver detalle'])
     await act(async () => undefined)
+  })
+})
+
+const loanCard = () => screen.findByRole('button', { name: 'Préstamo de Carlos Mendoza. Ver detalle' })
+const summary = (id: string) => screen.getByTestId(id).textContent
+
+describe('Resumen de préstamos', () => {
+  it('total prestado (sin interés), cobrado, pendiente y vencidos', async () => {
+    const { user } = await setup()
+    await openLoans(user)
+    await createLoan(user)
+    await user.click(screen.getByRole('button', { name: 'Listo' }))
+    await loanCard()
+    expect(summary('loans-total-lent')).toBe('$ 100.000,00')
+    expect(summary('loans-total-collected')).toBe('$ 0,00')
+    expect(summary('loans-total-pending')).toBe('$ 170.000,00')
+    expect(summary('loans-overdue-count')).toBe('0')
+  })
+
+  it('un préstamo con cuotas vencidas se marca Vencido y cuenta en el resumen', async () => {
+    const { user } = await setup()
+    await openLoans(user)
+    await createLoan(user, { ...EXAMPLE, loanDate: '2026-07-01', dueDate: '2026-09-01', count: 2 })
+    await user.click(screen.getByRole('button', { name: 'Listo' }))
+    const card = await loanCard()
+    expect(within(card).getByText('Vencido')).toBeInTheDocument()
+    expect(summary('loans-overdue-count')).toBe('1')
+    await user.click(card)
+    const detail = within(await screen.findByRole('dialog', { name: 'Detalle del préstamo' }))
+    expect(detail.getAllByText('Vencida')).toHaveLength(2)
+  })
+})
+
+describe('Cobro de cuotas', () => {
+  async function openDetail(user: UserEvent) {
+    await user.click(await loanCard())
+    return screen.findByRole('dialog', { name: 'Detalle del préstamo' })
+  }
+
+  it('marcar una cuota como pagada: ingreso, saldo, avance y resumen', async () => {
+    const { user, services } = await setup()
+    await openLoans(user)
+    await createLoan(user)
+    await user.click(screen.getByRole('button', { name: 'Listo' }))
+    const detail = within(await openDetail(user))
+
+    await user.click(detail.getByRole('button', { name: 'Marcar cuota 1 como pagada' }))
+    const sheet = within(await screen.findByRole('dialog', { name: 'Cobrar cuota' }))
+    expect(sheet.getByTestId('collect-amount')).toHaveTextContent('$ 17.000,00')
+    // Antes de confirmar no se registra nada.
+    expect(await services.repositories.transactions.list()).toHaveLength(2)
+    await user.click(sheet.getByRole('button', { name: 'Confirmar cobro' }))
+
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Cobrar cuota' })).not.toBeInTheDocument())
+    expect(detail.getByText('1 de 10 cuotas pagadas')).toBeInTheDocument()
+    const first = detail.getAllByRole('listitem')[0]!
+    expect(within(first).getByText('Pagada')).toBeInTheDocument()
+    expect(within(first).queryByRole('button', { name: /Marcar cuota/ })).not.toBeInTheDocument()
+    expect(within(detail.getAllByRole('listitem')[1]!).getByText('Próxima')).toBeInTheDocument()
+
+    const transactions = await services.repositories.transactions.list()
+    expect(transactions).toHaveLength(3)
+    const income = transactions.find((t) => t.type === 'INCOME' && t.loanId !== null)
+    expect(income).toMatchObject({
+      description: 'Cobro cuota 1/10 - Carlos Mendoza',
+      categoryId: 'inc-loans',
+      amount: 1_700_000,
+      status: 'COMPLETED',
+    })
+    const installments = await services.repositories.loans.listInstallments()
+    const paid = installments.find((i) => i.installmentNumber === 1)
+    expect(paid).toMatchObject({ status: 'PAID', paymentTransactionId: income?.id })
+    expect(paid?.paidAt).not.toBeNull()
+    expect(installments.filter((i) => i.status === 'PAID')).toHaveLength(1)
+
+    await user.click(detail.getByRole('button', { name: 'Cerrar detalle' }))
+    expect(summary('loans-total-collected')).toBe('$ 17.000,00')
+    expect(summary('loans-total-pending')).toBe('$ 153.000,00')
+    expect(summary('loans-total-lent')).toBe('$ 100.000,00')
+    expect(within(await loanCard()).getByText('1 de 10 cuotas pagadas')).toBeInTheDocument()
+
+    // Saldo: $400.000 (tras prestar) + $17.000 cobrados.
+    await user.click(navButton('Inicio'))
+    await screen.findByTestId('balance')
+    expect(balance()).toBe('$ 417.000,00')
+  })
+
+  it('cancelar la confirmación no cobra nada', async () => {
+    const { user, services } = await setup()
+    await openLoans(user)
+    await createLoan(user)
+    await user.click(screen.getByRole('button', { name: 'Listo' }))
+    const detail = within(await openDetail(user))
+    await user.click(detail.getByRole('button', { name: 'Marcar cuota 2 como pagada' }))
+    await user.click(within(await screen.findByRole('dialog', { name: 'Cobrar cuota' })).getByRole('button', { name: 'Cancelar' }))
+    expect(screen.queryByRole('dialog', { name: 'Cobrar cuota' })).not.toBeInTheDocument()
+    expect(detail.getByText('0 de 10 cuotas pagadas')).toBeInTheDocument()
+    expect(await services.repositories.transactions.list()).toHaveLength(2)
+  })
+
+  it('al cobrar la última cuota el préstamo queda Completado', async () => {
+    const { user, services } = await setup()
+    await openLoans(user)
+    await createLoan(user, { ...EXAMPLE, amount: '1000', count: 1, name: 'Carlos Mendoza' })
+    await user.click(screen.getByRole('button', { name: 'Listo' }))
+    const detail = within(await openDetail(user))
+    await user.click(detail.getByRole('button', { name: 'Marcar cuota 1 como pagada' }))
+    await user.click(within(await screen.findByRole('dialog', { name: 'Cobrar cuota' })).getByRole('button', { name: 'Confirmar cobro' }))
+    await waitFor(() => expect(detail.getByText('1 de 1 cuotas pagadas')).toBeInTheDocument())
+    expect(detail.queryByRole('button', { name: /Marcar cuota/ })).not.toBeInTheDocument()
+    expect((await services.repositories.loans.listLoans())[0]?.status).toBe('COMPLETED')
+
+    await user.click(detail.getByRole('button', { name: 'Cerrar detalle' }))
+    const card = await loanCard()
+    expect(within(card).getByText('Completado')).toBeInTheDocument()
+    expect(card).toHaveTextContent('Todas las cuotas cobradas')
+    expect(summary('loans-total-pending')).toBe('$ 0,00')
+    expect(summary('loans-total-collected')).toBe('$ 1.700,00')
+  })
+
+  it('el cobro persiste al recargar y el comprobante refleja el estado actual', async () => {
+    const { user, services, receipts } = await setup()
+    await openLoans(user)
+    await createLoan(user, { ...EXAMPLE, amount: '1000', count: 1 })
+    await user.click(screen.getByRole('button', { name: 'Listo' }))
+    const detail = within(await openDetail(user))
+    await user.click(detail.getByRole('button', { name: 'Marcar cuota 1 como pagada' }))
+    await user.click(within(await screen.findByRole('dialog', { name: 'Cobrar cuota' })).getByRole('button', { name: 'Confirmar cobro' }))
+    await waitFor(() => expect(detail.queryByRole('button', { name: /Marcar cuota/ })).not.toBeInTheDocument())
+    await user.click(detail.getByRole('button', { name: 'Ver comprobante' }))
+    await screen.findByRole('dialog', { name: 'Comprobante de préstamo' })
+    await waitFor(() => expect(receipts.rendered.at(-1)?.statusLabel).toBe('Completado'))
+    document.body.innerHTML = ''
+
+    mount(services)
+    await screen.findByTestId('balance')
+    // $500.000 − $1.000 prestados + $1.700 cobrados.
+    expect(balance()).toBe('$ 500.700,00')
   })
 })

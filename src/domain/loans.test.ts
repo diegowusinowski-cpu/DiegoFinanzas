@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import { computeBalance } from './balance'
 import {
+  buildInstallmentPayment,
   buildLoanBundle,
   calculateLoan,
   installmentDueDates,
+  installmentViews,
   installmentsOf,
   interestFor,
   loanProgress,
+  loanView,
+  loansSummary,
   splitInstallments,
   totalWithInterest,
   validateNewLoan,
@@ -217,5 +221,127 @@ describe('seguimiento', () => {
     const mine = installmentsOf(loan.id, mixed)
     expect(mine).toHaveLength(10)
     expect(mine.map((i) => i.installmentNumber)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+  })
+})
+
+describe('estados visibles', () => {
+  // Cuotas el 20/10, 7/11, 25/11, ... (10 cuotas entre 2026-10-02 y 2027-04-02).
+  const { loan, installments } = buildLoanBundle(input(), { now: NOW, newId: ids() })
+  const views = (today: string, list = installments) => installmentViews(list, today).map((v) => v.view)
+
+  it('la primera cuota sin pagar es Próxima y el resto Pendiente', () => {
+    expect(views('2026-10-06')).toEqual(['NEXT', ...Array<string>(9).fill('PENDING')])
+  })
+
+  it('una cuota sin pagar con fecha pasada es Vencida; la Próxima pasa a la siguiente', () => {
+    const v = views('2026-11-10')
+    expect(v.slice(0, 3)).toEqual(['OVERDUE', 'OVERDUE', 'NEXT'])
+    expect(v.slice(3).every((x) => x === 'PENDING')).toBe(true)
+  })
+
+  it('una cuota que vence hoy todavía no está vencida', () => {
+    const due = installments[0]!.dueDate
+    expect(views(due)[0]).toBe('NEXT')
+  })
+
+  it('Pagada gana sobre la fecha', () => {
+    const paid = installments.map((i) => (i.installmentNumber === 1 ? { ...i, status: 'PAID' as const } : i))
+    expect(views('2026-11-10', paid).slice(0, 3)).toEqual(['PAID', 'OVERDUE', 'NEXT'])
+  })
+
+  it('estado del préstamo: Pendiente, Próximo, Vencido y Completado', () => {
+    expect(loanView(loan, installments, '2026-10-06')).toBe('PENDING') // la próxima vence en 14 días
+    expect(loanView(loan, installments, '2026-10-13')).toBe('UPCOMING') // en 7 días
+    expect(loanView(loan, installments, '2026-10-20')).toBe('UPCOMING') // vence hoy
+    expect(loanView(loan, installments, '2026-10-21')).toBe('OVERDUE')
+    const allPaid = installments.map((i) => ({ ...i, status: 'PAID' as const }))
+    expect(loanView(loan, allPaid, '2030-01-01')).toBe('COMPLETED')
+    expect(loanView({ ...loan, status: 'COMPLETED' }, installments, '2026-10-06')).toBe('COMPLETED')
+  })
+})
+
+describe('resumen de préstamos', () => {
+  const a = buildLoanBundle(input(), { now: NOW, newId: ids() }) // $100.000 → $170.000 en 10 cuotas
+  let n = 0
+  const b = buildLoanBundle(
+    input({ borrowerName: 'Ana', principalAmount: 2_000_000, installmentCount: 2, loanDate: '2026-07-01', dueDate: '2026-09-01' }),
+    { now: NOW, newId: () => `b-${++n}` },
+  )
+
+  it('sin préstamos todo es cero', () => {
+    expect(loansSummary([], [], '2026-10-06')).toEqual({ totalLent: 0, totalCollected: 0, totalPending: 0, overdueCount: 0 })
+  })
+
+  it('prestado = solo capital; pendiente = cuotas sin pagar; vencidos = préstamos con cuotas vencidas', () => {
+    const installments = [...a.installments, ...b.installments]
+    expect(loansSummary([a.loan, b.loan], installments, '2026-10-06')).toEqual({
+      totalLent: 12_000_000,
+      totalCollected: 0,
+      totalPending: 17_000_000 + 3_400_000,
+      overdueCount: 1,
+    })
+  })
+
+  it('las cuotas pagadas pasan de pendiente a cobrado', () => {
+    const paid = a.installments.map((i) => (i.installmentNumber <= 2 ? { ...i, status: 'PAID' as const } : i))
+    expect(loansSummary([a.loan], paid, '2026-10-06')).toMatchObject({
+      totalCollected: 3_400_000,
+      totalPending: 13_600_000,
+    })
+  })
+})
+
+describe('cobro de una cuota', () => {
+  const { loan, installments } = buildLoanBundle(input(), { now: NOW, newId: ids() })
+  const later = new Date(2026, 10, 7, 9, 5)
+  const meta = { now: later, newId: () => 'pago-1', accountId: 'acc-main' }
+
+  it('pasa la cuota a Pagada y crea un INGRESO por su importe', () => {
+    const result = buildInstallmentPayment(loan, installments[0]!, installments, meta)
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    const { installment, transaction, loan: updated } = result.value
+    expect(installment).toMatchObject({ status: 'PAID', paymentTransactionId: 'pago-1', paidAt: later.toISOString() })
+    expect(transaction).toMatchObject({
+      id: 'pago-1',
+      type: 'INCOME',
+      amount: 1_700_000,
+      description: 'Cobro cuota 1/10 - Carlos Mendoza',
+      categoryId: 'inc-loans',
+      date: '2026-11-07',
+      status: 'COMPLETED',
+      loanId: loan.id,
+      currency: 'ARS',
+    })
+    expect(updated.status).toBe('ACTIVE')
+  })
+
+  it('aumenta el saldo por el importe de la cuota (el interés vuelve solo con los cobros)', () => {
+    const bundle = buildLoanBundle(input(), { now: NOW, newId: ids() })
+    const paid = buildInstallmentPayment(bundle.loan, bundle.installments[0]!, bundle.installments, meta)
+    if (!paid.ok) throw new Error('debió cobrar')
+    expect(computeBalance([bundle.transaction], undefined, 'ARS')).toBe(-10_000_000)
+    expect(computeBalance([bundle.transaction, paid.value.transaction], undefined, 'ARS')).toBe(-10_000_000 + 1_700_000)
+  })
+
+  it('la última cuota completa el préstamo', () => {
+    const almost = installments.map((i) => (i.installmentNumber === 10 ? i : { ...i, status: 'PAID' as const }))
+    const result = buildInstallmentPayment(loan, almost[9]!, almost, meta)
+    expect(result.ok && result.value.loan.status).toBe('COMPLETED')
+  })
+
+  it('no se cobra dos veces ni una cuota de otro préstamo', () => {
+    const paid = { ...installments[0]!, status: 'PAID' as const }
+    expect(buildInstallmentPayment(loan, paid, installments, meta)).toEqual({ ok: false, error: 'ALREADY_PAID' })
+    expect(buildInstallmentPayment(loan, { ...installments[0]!, loanId: 'otro' }, installments, meta)).toEqual({
+      ok: false,
+      error: 'NOT_FOUND',
+    })
+  })
+
+  it('la descripción nunca supera el máximo aunque el nombre sea largo', () => {
+    const long = { ...loan, borrowerName: 'X'.repeat(60), installmentCount: 360 }
+    const result = buildInstallmentPayment(long, { ...installments[0]!, installmentNumber: 360 }, installments, meta)
+    expect(result.ok && result.value.transaction.description.length).toBeLessThanOrEqual(80)
   })
 })

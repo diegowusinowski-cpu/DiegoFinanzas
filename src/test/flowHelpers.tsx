@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent, { type UserEvent } from '@testing-library/user-event'
 import { vi } from 'vitest'
 import type { AppServices } from '@/services/container'
@@ -56,7 +56,8 @@ export async function goToAmount(user: UserEvent, kind: 'Gasto' | 'Ingreso', inp
   await user.click(screen.getByRole('button', { name: kind }))
   await user.click(await screen.findByRole('button', { name: new RegExp(`^${input.country ?? 'Argentina'}`) }))
   await user.click(await screen.findByRole('button', { name: /^Individual/ }))
-  await user.click(await screen.findByRole('button', { name: new RegExp(`^${input.category}`) }))
+  const main = await screen.findByRole('main')
+  await user.click(within(main).getByRole('button', { name: new RegExp(`^${input.category}`) }))
 }
 
 export async function typeAmount(user: UserEvent, amount: string) {

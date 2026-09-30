@@ -1,31 +1,31 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import {
-  INSTALLMENT_STATUS_LABEL,
-  LOAN_STATUS_LABEL,
+  INSTALLMENT_VIEW_LABEL,
+  LOAN_VIEW_LABEL,
   formatLoanDate,
   formatMoney,
   installmentPlanText,
+  installmentViews,
   loanProgress,
-  type InstallmentStatus,
+  loanView,
+  toLocalDate,
   type Loan,
   type LoanInstallment,
 } from '@/domain'
+import { useFinance } from '@/state/FinanceContext'
 import { cx } from '../cx'
 import { Button, IconButton } from '../components/Button'
 import { Icon } from '../components/Icon'
+import { Sheet } from '../components/Sheet'
+import { useToast } from '../components/Toast'
 import { FlowFrame } from '../flow/FlowFrame'
+import { INSTALLMENT_VIEW_STYLE } from './loanStyles'
 
 interface LoanDetailProps {
   loan: Loan
   installments: readonly LoanInstallment[]
   onOpenReceipt(): void
   onClose(): void
-}
-
-const INSTALLMENT_STYLE: Record<InstallmentStatus, { chip: string; dot: string }> = {
-  PENDING: { chip: 'bg-warning-bg text-warning', dot: 'bg-warning' },
-  PAID: { chip: 'bg-positive-bg text-positive', dot: 'bg-positive-vivid' },
-  OVERDUE: { chip: 'bg-danger-bg text-danger', dot: 'bg-danger' },
 }
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
@@ -37,19 +37,46 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
   )
 }
 
-/** Detalle de un préstamo (solo lectura): datos, avance y cuotas una por una. */
+/** Detalle de un préstamo: datos, avance y cuotas una por una, con cobro de cada cuota. */
 export function LoanDetail({ loan, installments, onOpenReceipt, onClose }: LoanDetailProps) {
+  const { today, payInstallment } = useFinance()
+  const toast = useToast()
   const { paid, pending } = loanProgress(installments)
+  const view = loanView(loan, installments, today)
+  const [collecting, setCollecting] = useState<LoanInstallment | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const closeSheet = () => {
+    if (saving) return
+    setCollecting(null)
+    setError(null)
+  }
+
+  const confirmPayment = async () => {
+    if (!collecting || saving) return
+    setSaving(true)
+    setError(null)
+    const result = await payInstallment(collecting.id)
+    setSaving(false)
+    if (!result.ok) {
+      setError(result.error.message ?? 'No se pudo registrar el cobro.')
+      return
+    }
+    toast.show(`Cuota ${collecting.installmentNumber} cobrada`)
+    setCollecting(null)
+  }
   const percent = loan.installmentCount === 0 ? 0 : Math.round((paid / loan.installmentCount) * 100)
 
   return (
+    <>
     <FlowFrame className="animate-sheet">
       <div role="dialog" aria-modal="true" aria-label="Detalle del préstamo" className="flex min-h-0 flex-1 flex-col">
         <header className="flex min-h-16 shrink-0 items-center justify-between gap-3 px-gutter pt-safe pb-2">
           <div className="min-w-0">
             <h1 className="type-heading truncate">{loan.borrowerName}</h1>
             <p className="text-body-sm text-fg-soft">
-              Préstamo del {formatLoanDate(loan.loanDate)} · {LOAN_STATUS_LABEL[loan.status]}
+              Préstamo del {formatLoanDate(loan.loanDate)} · {LOAN_VIEW_LABEL[view]}
             </p>
           </div>
           <IconButton variant="secondary" size="md" onClick={onClose} aria-label="Cerrar detalle">
@@ -97,37 +124,53 @@ export function LoanDetail({ loan, installments, onOpenReceipt, onClose }: LoanD
               Cuotas
             </h2>
             <ul>
-              {[...installments]
-                .sort((a, b) => a.installmentNumber - b.installmentNumber)
-                .map((installment) => {
-                  const style = INSTALLMENT_STYLE[installment.status]
-                  return (
-                    <li
-                      key={installment.id}
-                      aria-label={`Cuota ${installment.installmentNumber} de ${loan.installmentCount}`}
-                      className="flex items-center gap-3 py-2.5"
-                    >
+              {installmentViews(installments, today).map(({ installment, view: installmentView }) => {
+                const style = INSTALLMENT_VIEW_STYLE[installmentView]
+                return (
+                  <li
+                    key={installment.id}
+                    aria-label={`Cuota ${installment.installmentNumber} de ${loan.installmentCount}`}
+                    className="flex flex-col gap-2 border-b border-line py-3 last:border-b-0"
+                  >
+                    <div className="flex items-center gap-3">
                       <span aria-hidden="true" className={cx('size-2.5 shrink-0 rounded-pill', style.dot)} />
                       <span className="min-w-0 flex-1">
                         <span className="type-subheading block text-fg">
                           Cuota {installment.installmentNumber} de {loan.installmentCount}
                         </span>
-                        <span className="block text-body-sm text-fg-soft">Vence: {formatLoanDate(installment.dueDate)}</span>
+                        <span className="block text-body-sm text-fg-soft">
+                          {installment.paidAt
+                            ? `Pagada el ${formatLoanDate(toLocalDate(new Date(installment.paidAt)))}`
+                            : `Vence: ${formatLoanDate(installment.dueDate)}`}
+                        </span>
                       </span>
-                      <span className="shrink-0 text-right">
+                      <span className="flex shrink-0 flex-col items-end">
                         <span className="type-subheading block text-fg">{formatMoney(installment.amount)}</span>
                         <span
                           className={cx(
-                            'mt-0.5 inline-block rounded-pill px-2 py-0.5 text-caption leading-tight font-medium',
+                            'mt-0.5 rounded-pill px-2 py-0.5 text-caption leading-tight font-medium whitespace-nowrap',
                             style.chip,
                           )}
                         >
-                          {INSTALLMENT_STATUS_LABEL[installment.status]}
+                          {INSTALLMENT_VIEW_LABEL[installmentView]}
                         </span>
                       </span>
-                    </li>
-                  )
-                })}
+                    </div>
+                    {installmentView !== 'PAID' ? (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="self-end"
+                        aria-label={`Marcar cuota ${installment.installmentNumber} como pagada`}
+                        onClick={() => setCollecting(installment)}
+                      >
+                        <Icon name="check" size="sm" />
+                        Marcar como pagada
+                      </Button>
+                    ) : null}
+                  </li>
+                )
+              })}
             </ul>
           </section>
         </div>
@@ -140,5 +183,34 @@ export function LoanDetail({ loan, installments, onOpenReceipt, onClose }: LoanD
         </div>
       </div>
     </FlowFrame>
+    <Sheet open={collecting !== null} onClose={closeSheet} title="Cobrar cuota">
+      {collecting ? (
+        <div className="flex flex-col gap-4 pb-2">
+          <p className="text-body text-fg-soft">
+            Cuota {collecting.installmentNumber} de {loan.installmentCount} de {loan.borrowerName}
+          </p>
+          <p className="type-money" data-testid="collect-amount">
+            {formatMoney(collecting.amount)}
+          </p>
+          <p className="text-body-sm text-fg-soft">
+            Se va a registrar un ingreso por este importe y se suma a tu saldo.
+          </p>
+          {error ? (
+            <p role="alert" className="rounded-control bg-danger-bg p-3 text-body-sm text-danger">
+              {error}
+            </p>
+          ) : null}
+          <div className="flex flex-col gap-2">
+            <Button block size="lg" loading={saving} onClick={() => void confirmPayment()}>
+              Confirmar cobro
+            </Button>
+            <Button block size="md" variant="tertiary" disabled={saving} onClick={closeSheet}>
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      ) : null}
+    </Sheet>
+    </>
   )
 }

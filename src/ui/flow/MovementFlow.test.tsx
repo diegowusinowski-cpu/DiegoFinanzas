@@ -48,7 +48,7 @@ describe('Flujo de INGRESO completo', () => {
       'Becas de estudio o ayuda estudiantil',
       'Rendimientos de ahorros o billeteras virtuales',
     ]
-    for (const name of categories) expect(screen.getByRole('button', { name: new RegExp(`^${name}`) })).toBeInTheDocument()
+    for (const name of categories) expect(within(screen.getByRole('main')).getByRole('button', { name: new RegExp(`^${name}`) })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: /^Trabajo en relación de dependencia/ }))
 
     // Monto.
@@ -150,7 +150,7 @@ describe('Flujo de GASTO completo', () => {
       'Cuidado personal y compras',
       'Suscripciones y tecnología',
     ]) {
-      expect(screen.getByRole('button', { name: new RegExp(`^${name}`) })).toBeInTheDocument()
+      expect(within(screen.getByRole('main')).getByRole('button', { name: new RegExp(`^${name}`) })).toBeInTheDocument()
     }
   })
 

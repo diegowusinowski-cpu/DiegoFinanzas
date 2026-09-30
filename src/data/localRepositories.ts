@@ -1,5 +1,5 @@
 import { DEFAULT_CATEGORIES, toIso } from '@/domain'
-import type { Account, Category, Loan, LoanBundle, LoanInstallment, Reminder, Transaction } from '@/domain'
+import type { Account, Category, InstallmentPayment, Loan, LoanBundle, LoanInstallment, Reminder, Transaction } from '@/domain'
 import { LocalCollection } from './localCollection'
 import type {
   AccountRepository,
@@ -123,17 +123,34 @@ class LocalLoanRepository implements LoanRepository {
     return this.installments.read()
   }
   async create({ loan, installments, transaction }: LoanBundle) {
-    const keys = [STORAGE_KEYS.loans, STORAGE_KEYS.installments, STORAGE_KEYS.transactions]
-    const snapshot = keys.map((key) => [key, this.storage.getItem(key)] as const)
-    try {
+    this.atomically(() => {
       this.transactions.upsertMany([transaction])
       this.installments.upsertMany(installments)
       this.loans.upsertMany([loan])
+    })
+  }
+  async recordPayment({ loan, installment, transaction }: InstallmentPayment) {
+    this.atomically(() => {
+      this.transactions.upsertMany([transaction])
+      this.installments.upsertMany([installment])
+      this.loans.upsertMany([loan])
+    })
+  }
+  /** Todo o nada: si algo falla, se restaura el estado previo de las tres colecciones. */
+  private atomically(write: () => void) {
+    const keys = [STORAGE_KEYS.loans, STORAGE_KEYS.installments, STORAGE_KEYS.transactions]
+    const snapshot = keys.map((key) => [key, this.storage.getItem(key)] as const)
+    try {
+      write()
     } catch (error) {
-      // Todo o nada: si algo falla, se restaura el estado previo de las tres colecciones.
       for (const [key, raw] of snapshot) {
-        if (raw === null) this.storage.removeItem(key)
-        else this.storage.setItem(key, raw)
+        // Cada colección se restaura por separado: que una falle no impide restaurar las demás.
+        try {
+          if (raw === null) this.storage.removeItem(key)
+          else this.storage.setItem(key, raw)
+        } catch {
+          continue
+        }
       }
       throw error
     }

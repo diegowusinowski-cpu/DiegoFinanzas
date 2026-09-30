@@ -40,7 +40,7 @@ function wrap(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): st
  * app. Devuelve un PNG limpio (1080 px de ancho) listo para ver, guardar o compartir.
  */
 export class CanvasReceiptService implements ReceiptService {
-  async render(loan: Loan): Promise<Blob> {
+  async render(loan: Loan, statusLabel: string): Promise<Blob> {
     const family = 'DM Sans Variable'
     await Promise.all([
       document.fonts.load(`400 32px "${family}"`),
@@ -60,7 +60,7 @@ export class CanvasReceiptService implements ReceiptService {
       line: 'rgba(17, 19, 17, 0.10)',
     }
 
-    const rows = receiptRows(loan)
+    const rows = receiptRows(loan, statusLabel)
     const probe = document.createElement('canvas').getContext('2d')
     if (!probe) throw new Error('Este navegador no puede generar la imagen.')
     const innerWidth = WIDTH - PAD * 2 - 88
@@ -96,15 +96,10 @@ export class CanvasReceiptService implements ReceiptService {
     ctx.font = font(400, 30)
     ctx.fillText('DiegoFinanzas', PAD + 56, y + 40 + 52 + 40)
 
-    ctx.textAlign = 'right'
-    ctx.fillStyle = colors.onPanelSoft
-    ctx.font = font(500, 28)
-    ctx.fillText('COMPROBANTE DE PRÉSTAMO', WIDTH - PAD - 56, y + 40 + 40)
-
     ctx.textAlign = 'left'
     ctx.fillStyle = colors.onPanelSoft
-    ctx.font = font(400, 34)
-    ctx.fillText('Resumen de préstamo', PAD + 56, y + 268)
+    ctx.font = font(500, 40)
+    ctx.fillText('Comprobante de préstamo', PAD + 56, y + 268)
     ctx.fillStyle = colors.onPanel
     ctx.font = font(500, 108)
     ctx.fillText(formatMoney(loan.principalAmount), PAD + 52, y + 268 + 120)

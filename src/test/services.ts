@@ -24,10 +24,10 @@ export function fakeRates(behavior: 'ready' | 'unavailable' = 'ready'): Exchange
 
 /** Comprobante de prueba: registra los préstamos recibidos y devuelve un PNG falso. */
 export function fakeReceipts() {
-  const rendered: Loan[] = []
+  const rendered: Array<{ loan: Loan; statusLabel: string }> = []
   const service: ReceiptService = {
-    render: (loan) => {
-      rendered.push(loan)
+    render: (loan, statusLabel) => {
+      rendered.push({ loan, statusLabel })
       return Promise.resolve(new window.Blob(['png'], { type: 'image/png' }))
     },
   }

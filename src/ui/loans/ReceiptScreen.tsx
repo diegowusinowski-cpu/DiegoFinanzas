@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { Loan } from '@/domain'
+import { LOAN_VIEW_LABEL, installmentsOf, loanView, type Loan } from '@/domain'
 import { receiptFilename } from '@/services/receipt'
+import { useFinance } from '@/state/FinanceContext'
 import { useServices } from '@/state/ServicesContext'
 import { Button, IconButton } from '../components/Button'
 import { Skeleton } from '../components/Card'
@@ -21,6 +22,8 @@ interface ReceiptScreenProps {
 export function ReceiptScreen({ loan, mode, onClose }: ReceiptScreenProps) {
   const { receipts, sharing } = useServices()
   const toast = useToast()
+  const { installments, today } = useFinance()
+  const statusLabel = LOAN_VIEW_LABEL[loanView(loan, installmentsOf(loan.id, installments), today)]
   const [state, setState] = useState<ReceiptState>({ status: 'loading' })
   const [attempt, setAttempt] = useState(0)
   const [message, setMessage] = useState<string | null>(null)
@@ -28,7 +31,7 @@ export function ReceiptScreen({ loan, mode, onClose }: ReceiptScreenProps) {
   useEffect(() => {
     let cancelled = false
     let url: string | null = null
-    receipts.render(loan).then(
+    receipts.render(loan, statusLabel).then(
       (blob) => {
         if (cancelled) return
         url = URL.createObjectURL(blob)
@@ -42,7 +45,7 @@ export function ReceiptScreen({ loan, mode, onClose }: ReceiptScreenProps) {
       cancelled = true
       if (url) URL.revokeObjectURL(url)
     }
-  }, [loan, receipts, attempt])
+  }, [loan, statusLabel, receipts, attempt])
 
   const filename = receiptFilename(loan)
   const file = useMemo(
