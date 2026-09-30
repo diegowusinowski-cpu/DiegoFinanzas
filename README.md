@@ -33,3 +33,11 @@ El saldo nunca se guarda: se deriva de los movimientos `COMPLETED`.
 - Préstamos, cuotas y cobros: generar recordatorios implementando `ReminderGenerator` (`src/domain/reminders.ts`).
 - Cuentas múltiples: `Transaction.accountId` y `computeBalance(tx, accountId)` ya existen.
 - Producción: `/api/dolar-blue` hoy lo sirve el plugin de Vite (`dev` y `preview`); en un hosting real hay que desplegar el mismo handler (`server/ratesApi.ts`) como función/servidor.
+
+## Despliegue (Vercel)
+
+1. En vercel.com → *Add New Project* → importar este repositorio (rama a publicar).
+2. Framework: Vite (se detecta solo, `vercel.json` ya lo define). Deploy.
+3. `api/dolar-blue.ts` se publica como función; la app la consume en `/api/dolar-blue`.
+
+La app usa HTTPS, requisito de la PWA y del cifrado del PIN (`crypto.subtle`).
