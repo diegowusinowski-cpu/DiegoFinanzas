@@ -78,3 +78,8 @@ export function formatRelativeDate(date: LocalDate, today: LocalDate): string {
   const d = localDateTimeToDate(date, '00:00')
   return sameYear ? longDate.format(d) : longDateWithYear.format(d)
 }
+
+/** `2026-10-02` → `2 de octubre del 2026` (texto buscable). */
+export function formatLongDateParts(date: LocalDate): string {
+  return `${formatDayMonth(date)} del ${date.slice(0, 4)}`
+}

@@ -65,7 +65,7 @@ function Shell() {
           onSeeAll={() => setTab('movements')}
         />
       ) : tab === 'movements' ? (
-        <MovementsScreen />
+        <MovementsScreen onBack={() => setTab('home')} />
       ) : (
         <MoreScreen />
       )}

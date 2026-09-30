@@ -23,6 +23,16 @@ export type IconName =
   | 'arrow-right'
   | 'check'
   | 'user'
+  | 'filter'
+  | 'search'
+  | 'transport'
+  | 'leisure'
+  | 'loan'
+  | 'subscription'
+  | 'work'
+  | 'store'
+  | 'bag'
+  | 'scholarship'
 
 const PATHS: Record<IconName, ReactNode> = {
   home: <path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />,
@@ -93,6 +103,65 @@ const PATHS: Record<IconName, ReactNode> = {
   'arrow-left': <path d="M19 12H5M12 5l-7 7 7 7" />,
   'arrow-right': <path d="M5 12h14M12 5l7 7-7 7" />,
   check: <path d="m5 12.5 4.5 4.5L19 7.5" />,
+  /* Tres líneas horizontales de largo decreciente (ordenar/filtrar). */
+  filter: <path d="M4 7h16M7 12h10M10 17h4" />,
+  search: (
+    <>
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="m16 16 4.5 4.5" />
+    </>
+  ),
+  transport: (
+    <>
+      <rect x="4.5" y="3.5" width="15" height="14" rx="3" />
+      <path d="M4.5 11h15M7.5 17.5v2.5M16.5 17.5v2.5" />
+      <path d="M8.5 14h.01M15.5 14h.01" />
+    </>
+  ),
+  leisure: (
+    <>
+      <path d="M3.5 8.5a1 1 0 0 1 1-1h15a1 1 0 0 1 1 1V10a2 2 0 0 0 0 4v1.5a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1V14a2 2 0 0 0 0-4z" />
+      <path d="M14.5 7.5v1.5M14.5 11.25v1.5M14.5 15v1.5" />
+    </>
+  ),
+  loan: (
+    <>
+      <ellipse cx="12" cy="6.5" rx="6.5" ry="2.75" />
+      <path d="M5.5 6.5v5c0 1.5 2.9 2.75 6.5 2.75s6.5-1.25 6.5-2.75v-5" />
+      <path d="M5.5 11.5v5c0 1.5 2.9 2.75 6.5 2.75s6.5-1.25 6.5-2.75v-5" />
+    </>
+  ),
+  subscription: (
+    <>
+      <rect x="3.5" y="5" width="17" height="11.5" rx="2" />
+      <path d="M8.5 20h7M12 16.5V20" />
+    </>
+  ),
+  work: (
+    <>
+      <rect x="3.5" y="7.5" width="17" height="12" rx="2" />
+      <path d="M9 7.5V6a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 6v1.5M3.5 13h17" />
+    </>
+  ),
+  store: (
+    <>
+      <path d="m4 9.5 1.2-5h13.6l1.2 5" />
+      <path d="M4 9.5a2.67 2.67 0 0 0 5.33 0 2.67 2.67 0 0 0 5.34 0 2.67 2.67 0 0 0 5.33 0" />
+      <path d="M5.5 12.5v7h13v-7" />
+    </>
+  ),
+  bag: (
+    <>
+      <path d="M6 8.5h12l1 11H5z" />
+      <path d="M9 8.5V7a3 3 0 0 1 6 0v1.5" />
+    </>
+  ),
+  scholarship: (
+    <>
+      <path d="m2.5 9.5 9.5-4.5 9.5 4.5-9.5 4.5z" />
+      <path d="M6.5 11.5V16c0 1.2 2.5 2.5 5.5 2.5s5.5-1.3 5.5-2.5v-4.5M21.5 9.5V14" />
+    </>
+  ),
   user: (
     <>
       <circle cx="12" cy="8" r="3.5" />
