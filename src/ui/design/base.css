@@ -12,7 +12,6 @@
     font-family: var(--font-sans);
     font-size: var(--text-body);
     font-weight: var(--font-weight-regular);
-    font-feature-settings: 'tnum' 1;
     -webkit-font-smoothing: antialiased;
     overscroll-behavior-y: none;
   }
@@ -39,14 +38,16 @@
   line-height: var(--text-money--line-height);
   letter-spacing: var(--tracking-money);
   font-weight: var(--font-weight-medium);
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: proportional-nums;
+  word-spacing: -0.12em;
 }
 @utility type-money-sm {
   font-size: var(--text-money-sm);
   line-height: 1;
   letter-spacing: var(--tracking-money);
   font-weight: var(--font-weight-medium);
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: proportional-nums;
+  word-spacing: -0.12em;
 }
 @utility type-money-cents {
   font-size: var(--text-money-cents);
@@ -92,9 +93,10 @@
   letter-spacing: var(--tracking-button);
   font-weight: var(--font-weight-medium);
 }
-/* Cifras: ancho tabular para que los montos se alineen. */
+/* Cifras: proporcionales, como en ARQ; los montos se alinean a la derecha. */
 @utility type-number {
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: proportional-nums;
+  word-spacing: -0.08em;
   letter-spacing: -0.01em;
   font-weight: var(--font-weight-medium);
 }

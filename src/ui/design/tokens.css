@@ -5,7 +5,7 @@
  *  - Densidad compacta: controles de 36–48 px, filas de 56 px, texto de 13–15 px.
  *  - El color es jerarquía: el verde bosque se reserva para la superficie
  *    financiera (hero) y la acción principal; el resto es arena cálida.
- *  - Las cifras son protagonistas: tabulares, con centavos en tamaño menor.
+ *  - Las cifras son protagonistas: proporcionales, con centavos en tamaño menor.
  *  - Poco borde, casi sin sombra; las superficies se separan por tono.
  *
  * Capas:  1) paleta base → 2) tokens semánticos → 3) componentes.
@@ -79,8 +79,8 @@
   --color-scrim: rgb(17 19 17 / 0.45);
 
   /* ── Tipografía ──────────────────────────────── */
-  /* Neo-grotesca liviana (Geist): cifras tabulares limpias, trazo fino. */
-  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Onest: grotesca geométrica de dígitos redondos y anchos, la más cercana a ARQ. */
+  --font-sans: 'Onest Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-display: var(--font-sans);
 
   --font-weight-regular: 400;
@@ -90,8 +90,8 @@
   /* money: cifra protagonista (saldo) y sus centavos */
   --text-money: 2.75rem;
   --text-money--line-height: 1;
-  --tracking-money: -0.035em;
-  --text-money-cents: 1.5rem;
+  --tracking-money: -0.03em;
+  --text-money-cents: 1.7rem; /* ≈ 62 % de la cifra, como ARQ */
   --text-money-sm: 2.125rem; /* montos muy largos */
   /* display: título de pantalla */
   --text-display: 1.75rem;
@@ -104,11 +104,11 @@
   /* title: título de sección */
   --text-title: 1.0625rem;
   --text-title--line-height: 1.25;
-  --tracking-title: -0.015em;
+  --tracking-title: -0.012em;
   /* subheading: título de fila / valor */
   --text-subheading: 0.9375rem;
   --text-subheading--line-height: 1.3;
-  --tracking-subheading: -0.01em;
+  --tracking-subheading: -0.008em;
   /* body, body-sm, caption, label, button */
   --text-body: 0.9375rem;
   --text-body--line-height: 1.45;
@@ -121,7 +121,7 @@
   --tracking-label: 0em;
   --text-button: 0.9375rem;
   --text-button--line-height: 1;
-  --tracking-button: -0.01em;
+  --tracking-button: -0.005em;
 
   /* ── Espaciado (base 4px; roles semánticos) ──── */
   --spacing-gutter: 1.25rem; /* margen lateral: 20px */
