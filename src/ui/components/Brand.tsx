@@ -7,7 +7,7 @@ export function Wordmark({ size = 'sm', className }: { size?: 'sm' | 'lg'; class
   return (
     <span
       className={cx(
-        'font-display font-light tracking-[-0.04em] text-fg',
+        'font-semibold tracking-[-0.05em] text-fg',
         size === 'lg' ? 'text-display-xl' : 'text-title',
         className,
       )}
@@ -21,7 +21,7 @@ export function Wordmark({ size = 'sm', className }: { size?: 'sm' | 'lg'; class
 export function BrandFooter() {
   return (
     <footer className="flex flex-col items-center gap-2 pt-10 pb-4 text-center">
-      <span className="font-display text-display font-light tracking-[-0.04em] text-fg-muted">{BRAND_SHORT}</span>
+      <span className="text-display font-semibold tracking-[-0.05em] text-fg-muted">{BRAND_SHORT}</span>
       <span className="type-eyebrow text-fg-muted">{BRAND_NAME}</span>
     </footer>
   )

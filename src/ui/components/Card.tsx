@@ -3,18 +3,17 @@ import { cx } from '../cx'
 import { Icon, type IconName } from './Icon'
 
 /**
- * Superficies del sistema. `surface` es la tarjeta base; el resto son paneles
- * de color pleno (texto oscuro) reservados para módulos.
+ * Superficies del sistema:
+ *  - surface: card elevada sobre el fondo cálido
+ *  - sunken:  superficie hundida (arena), para agrupar sin elevar
+ *  - panel:   superficie financiera oscura (verde bosque)
  */
-export type CardVariant = 'surface' | 'inverse' | 'iris' | 'orchid' | 'pale' | 'periwinkle'
+export type CardVariant = 'surface' | 'sunken' | 'panel'
 
 const VARIANTS: Record<CardVariant, string> = {
-  surface: 'rounded-card bg-surface text-fg',
-  inverse: 'rounded-tile bg-surface-inverse text-void',
-  iris: 'rounded-tile bg-iris-gleam text-void',
-  orchid: 'rounded-tile bg-orchid-bloom text-void',
-  pale: 'rounded-tile bg-pale-iris text-void',
-  periwinkle: 'rounded-tile bg-periwinkle text-void',
+  surface: 'rounded-card bg-surface text-fg shadow-card',
+  sunken: 'rounded-card bg-sunken text-fg',
+  panel: 'rounded-panel bg-panel text-on-panel',
 }
 
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
@@ -32,10 +31,10 @@ export function Skeleton({ className }: { className?: string }) {
 export function EmptyState({ icon, title, children }: { icon: IconName; title: string; children?: string }) {
   return (
     <div className="flex flex-col items-center gap-2 px-6 py-9 text-center">
-      <span className="mb-1 grid size-12 place-items-center rounded-pill border border-line bg-glass text-fg-soft">
-        <Icon name={icon} size={22} />
+      <span className="mb-1 grid size-12 place-items-center rounded-pill bg-sunken text-fg-soft">
+        <Icon name={icon} size="lg" />
       </span>
-      <p className="text-body font-medium text-fg">{title}</p>
+      <p className="type-subheading text-fg">{title}</p>
       {children ? <p className="max-w-64 text-body-sm text-fg-soft">{children}</p> : null}
     </div>
   )

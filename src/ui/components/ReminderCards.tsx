@@ -1,13 +1,14 @@
 import { reminderDueLabel, reminderUrgency, type Reminder } from '@/domain'
 import { cx } from '../cx'
+import { IconButton } from './Button'
 import { Card } from './Card'
 import { Icon } from './Icon'
 
 const URGENCY_STYLE = {
-  overdue: 'bg-void text-pure',
-  today: 'bg-deep-iris text-pure',
-  soon: 'bg-deep-iris text-pure',
-  later: 'bg-void/10 text-void',
+  overdue: 'bg-danger-bg text-danger',
+  today: 'bg-warning-bg text-warning',
+  soon: 'bg-warning-bg text-warning',
+  later: 'bg-glass-on-panel text-on-panel',
 } as const
 
 interface ReminderCardProps {
@@ -21,27 +22,28 @@ export function ReminderCard({ reminder, today, single, onDismiss }: ReminderCar
   const urgency = reminderUrgency(reminder, today)
   return (
     <li className={cx('snap-start', single ? 'w-full' : 'w-[85%] shrink-0')}>
-      <Card variant="pale" className="flex h-full flex-col gap-3 p-6">
+      <Card variant="panel" className="flex h-full flex-col gap-3 p-6">
         <div className="flex items-start justify-between gap-3">
           <span
             className={cx(
-              'rounded-pill px-3 py-1.5 font-mono text-[0.625rem] leading-none tracking-[0.12em] uppercase',
+              'rounded-pill px-3 py-1.5 text-caption leading-none font-medium',
               URGENCY_STYLE[urgency],
             )}
           >
             {reminderDueLabel(reminder, today)}
           </span>
-          <button
-            type="button"
+          <IconButton
+            variant="tertiary"
+            size="sm"
             onClick={() => onDismiss(reminder.id)}
             aria-label={`Descartar recordatorio: ${reminder.title}`}
-            className="-mt-1.5 -mr-2 grid size-10 place-items-center rounded-pill text-void transition-colors duration-200 hover:bg-void/10 active:bg-void/20"
+            className="-mt-1 -mr-2 text-on-panel hover:bg-glass-on-panel active:bg-glass-on-panel"
           >
-            <Icon name="close" size={16} />
-          </button>
+            <Icon name="close" size="sm" />
+          </IconButton>
         </div>
-        <h3 className="type-title text-void">{reminder.title}</h3>
-        {reminder.description ? <p className="text-body-sm text-void/75">{reminder.description}</p> : null}
+        <h3 className="type-title text-on-panel">{reminder.title}</h3>
+        {reminder.description ? <p className="text-body-sm text-on-panel-soft">{reminder.description}</p> : null}
       </Card>
     </li>
   )

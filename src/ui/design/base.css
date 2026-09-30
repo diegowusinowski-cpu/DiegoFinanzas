@@ -2,7 +2,7 @@
   html {
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
-    color-scheme: dark;
+    color-scheme: light;
     background: var(--color-canvas);
   }
   body {
@@ -11,67 +11,85 @@
     color: var(--color-fg);
     font-family: var(--font-sans);
     font-size: var(--text-body);
-    font-weight: 400;
-    font-feature-settings: 'tnum' 1, 'cv11' 1;
+    font-weight: var(--font-weight-regular);
+    font-feature-settings: 'tnum' 1;
     -webkit-font-smoothing: antialiased;
     overscroll-behavior-y: none;
   }
   button { cursor: pointer; }
   button:disabled { cursor: not-allowed; }
+  /* Foco: mismo anillo en toda la app. */
   :focus-visible {
-    outline: 2px solid var(--color-pure);
-    outline-offset: 2px;
+    outline: var(--focus-ring-width) solid var(--color-focus);
+    outline-offset: var(--focus-ring-offset);
   }
   input, select, textarea, button { font: inherit; }
-  input[type='date'], input[type='time'] { color-scheme: dark; }
-  ::placeholder { color: var(--color-fog); opacity: 1; }
+  input[type='date'], input[type='time'] { color-scheme: light; }
+  ::placeholder { color: var(--color-fg-muted); opacity: 1; }
 }
 
-/* Roles tipográficos: las tres voces del sistema. */
+/* ── Roles tipográficos ─────────────────────────
+ * Cada rol fija tamaño, interlineado, tracking y peso desde tokens. */
 @utility type-display-xl {
-  font-family: var(--font-display);
-  font-weight: 300;
   font-size: var(--text-display-xl);
   line-height: var(--text-display-xl--line-height);
-  letter-spacing: var(--tracking-display);
+  letter-spacing: var(--tracking-display-xl);
+  font-weight: var(--font-weight-medium);
   color: var(--color-fg-heading);
 }
 @utility type-display {
-  font-family: var(--font-display);
-  font-weight: 300;
   font-size: var(--text-display);
   line-height: var(--text-display--line-height);
   letter-spacing: var(--tracking-display);
+  font-weight: var(--font-weight-medium);
   color: var(--color-fg-heading);
 }
 @utility type-heading {
-  font-family: var(--font-display);
-  font-weight: 300;
   font-size: var(--text-heading);
   line-height: var(--text-heading--line-height);
-  letter-spacing: var(--tracking-display);
+  letter-spacing: var(--tracking-heading);
+  font-weight: var(--font-weight-medium);
   color: var(--color-fg-heading);
 }
 @utility type-title {
-  font-family: var(--font-display);
-  font-weight: 300;
   font-size: var(--text-title);
   line-height: var(--text-title--line-height);
-  letter-spacing: -0.01em;
+  letter-spacing: var(--tracking-title);
+  font-weight: var(--font-weight-semibold);
 }
+@utility type-subheading {
+  font-size: var(--text-subheading);
+  line-height: var(--text-subheading--line-height);
+  font-weight: var(--font-weight-medium);
+}
+/* Etiquetas y textos de apoyo (labels, encabezados de grupo, enlaces de bloque). */
 @utility type-eyebrow {
-  font-family: var(--font-mono);
-  font-weight: 400;
   font-size: var(--text-label);
   line-height: var(--text-label--line-height);
   letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
+  font-weight: var(--font-weight-medium);
   color: var(--color-fg-soft);
 }
-@utility type-subheading {
-  font-weight: 300;
-  font-size: var(--text-subheading);
-  line-height: var(--text-subheading--line-height);
+@utility type-button {
+  font-size: var(--text-button);
+  line-height: var(--text-button--line-height);
+  letter-spacing: var(--tracking-button);
+  font-weight: var(--font-weight-medium);
+}
+/* Cifras: ancho tabular para que los montos se alineen. */
+@utility type-number {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  font-weight: var(--font-weight-medium);
+}
+
+/* ── Interacción base: hover / pressed / disabled / transición ── */
+@utility interactive {
+  transition-property: background-color, color, border-color, opacity, transform;
+  transition-duration: var(--duration-base);
+  transition-timing-function: var(--ease-standard);
+  &:active:not(:disabled) { transform: scale(var(--press-scale)); }
+  &:disabled { opacity: var(--opacity-disabled); }
 }
 
 @layer utilities {

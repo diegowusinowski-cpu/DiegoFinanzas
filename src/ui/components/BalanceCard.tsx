@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { formatMoney, type MinorUnits } from '@/domain'
 import { cx } from '../cx'
+import { IconButton } from './Button'
 import { Icon } from './Icon'
 import { Skeleton } from './Card'
 
@@ -13,15 +14,16 @@ export function BalanceCard({ balance, loading }: { balance: MinorUnits; loading
         <h2 id="balance-label" className="type-eyebrow">
           Saldo disponible
         </h2>
-        <button
-          type="button"
+        <IconButton
+          variant="tertiary"
+          size="sm"
           onClick={() => setHidden((h) => !h)}
           aria-pressed={hidden}
           aria-label={hidden ? 'Mostrar saldo' : 'Ocultar saldo'}
-          className="grid size-8 place-items-center rounded-pill text-fg-soft transition-colors duration-200 hover:bg-glass hover:text-fg"
+          className="text-fg-soft"
         >
-          <Icon name={hidden ? 'eye-off' : 'eye'} size={17} />
-        </button>
+          <Icon name={hidden ? 'eye-off' : 'eye'} size="sm" />
+        </IconButton>
       </div>
       {loading ? (
         <Skeleton className="h-14 w-60" />
@@ -31,7 +33,7 @@ export function BalanceCard({ balance, loading }: { balance: MinorUnits; loading
           className={cx(
             'break-words tabular-nums',
             text.length > 13 ? 'type-display' : 'type-display-xl',
-            balance < 0 && !hidden && 'text-orchid-bloom',
+            balance < 0 && !hidden && 'text-danger',
           )}
         >
           {text}

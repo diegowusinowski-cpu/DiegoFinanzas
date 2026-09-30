@@ -1,88 +1,162 @@
 /*
- * DWF Design System — tokens.
- * Lenguaje: galería nocturna. Lienzo casi negro, serif liviano para las frases
- * importantes, sans neutra para la interfaz, mono en mayúsculas para etiquetas,
- * y paneles de color pleno solo para módulos. La elevación se logra con
- * escalones de superficie, no con sombras.
+ * DWF Design System — tokens (fuente única de verdad visual).
+ *
+ * Lenguaje: producto fintech móvil, claro y cálido. Fondo crema (nunca blanco
+ * puro), superficies financieras en verde bosque profundo, verde vivo solo para
+ * lo positivo, texto casi negro con grises suaves. Formas redondeadas, botones
+ * en píldora y elevación mínima.
+ *
+ * Capas:  1) paleta base  →  2) tokens semánticos  →  3) componentes.
+ * Los componentes usan SOLO tokens semánticos (bg-canvas, text-fg, …).
  */
-@theme {
-  /* ── Paleta base ─────────────────────────────── */
-  --color-iris-gleam: #847dff;
-  --color-cyan-signal: #00b3dd;
-  --color-pale-iris: #d1c9ff;
-  --color-deep-iris: #4b49aa;
-  --color-orchid-bloom: #dd90d8;
-  --color-periwinkle: #90b8f0;
-  --color-obsidian: #0f1011;
-  --color-abyss: #090a0b;
-  --color-graphite: #2e2e2e;
-  --color-steel: #3f4041;
-  --color-silver: #cacaca;
-  --color-fog: #6a6b6b;
-  --color-ash: #9f9fa0;
-  --color-cloud: #f5f5f7;
-  --color-pure: #ffffff;
-  --color-void: #000000;
-  /* Funcional (no está en la referencia): errores y validación. */
-  --color-danger: #ff8f85;
+@theme static {
+  /* ── 1. Paleta base ──────────────────────────── */
+  /* Verde bosque: superficies financieras y acción principal */
+  --color-forest-950: #0c2218;
+  --color-forest-900: #14392a;
+  --color-forest-800: #1c4a34;
+  --color-forest-700: #2a5f44;
+  --color-forest-600: #3d7a5a;
+  /* Verde vivo: positivo, ingresos, éxito */
+  --color-leaf-100: #dcf1e5;
+  --color-leaf-500: #2fbf71;
+  --color-leaf-600: #1b8f57;
+  /* Arena: fondos cálidos y superficies claras */
+  --color-sand-50: #fcfbf9;
+  --color-sand-100: #f5f1ec;
+  --color-sand-200: #ece7e0;
+  --color-sand-300: #e0dad1;
+  /* Tinta: texto */
+  --color-ink-900: #111311;
+  --color-ink-700: #454845;
+  --color-ink-500: #6d706c;
+  --color-ink-300: #a8aba6;
+  /* Estados */
+  --color-ochre-100: #fbefd6;
+  --color-ochre-600: #98590a;
+  --color-brick-100: #fbe5e2;
+  --color-brick-600: #c23a33;
+  /* Texto sobre verde bosque */
+  --color-on-forest: #f3f1ec;
+  --color-on-forest-soft: rgb(243 241 236 / 0.7);
 
-  /* ── Semánticos: lo que usan los componentes ─── */
-  --color-canvas: var(--color-obsidian);
-  --color-canvas-deep: var(--color-abyss);
-  --color-surface: var(--color-graphite);
-  --color-surface-hover: var(--color-steel);
-  --color-surface-inverse: var(--color-silver);
-  --color-fg: var(--color-pure);
-  --color-fg-heading: var(--color-cloud);
-  --color-fg-soft: var(--color-ash);
-  --color-fg-muted: var(--color-fog);
-  --color-fg-on-action: var(--color-void);
-  --color-action: var(--color-pure);
-  --color-data: var(--color-cyan-signal);
-  --color-glass: rgb(255 255 255 / 0.08);
-  --color-glass-strong: rgb(255 255 255 / 0.14);
-  --color-line: rgb(255 255 255 / 0.12);
+  /* ── 2. Semánticos ───────────────────────────── */
+  /* Superficies */
+  --color-canvas: var(--color-sand-100); /* fondo de la app */
+  --color-surface: var(--color-sand-50); /* card / superficie elevada */
+  --color-sunken: var(--color-sand-200); /* inputs, chips, botón secundario */
+  --color-sunken-hover: var(--color-sand-300);
+  --color-panel: var(--color-forest-900); /* superficie financiera oscura */
+  --color-panel-hover: var(--color-forest-800);
+  --color-nav: rgb(252 251 249 / 0.82); /* barra inferior (vidrio) */
+  /* Texto */
+  --color-fg: var(--color-ink-900);
+  --color-fg-heading: var(--color-ink-900);
+  --color-fg-soft: var(--color-ink-500); /* secundario */
+  --color-fg-muted: var(--color-ink-300); /* deshabilitado / placeholder */
+  --color-on-panel: var(--color-on-forest);
+  --color-on-panel-soft: var(--color-on-forest-soft);
+  /* Acción */
+  --color-action: var(--color-forest-800);
+  --color-action-hover: var(--color-forest-700);
+  --color-action-pressed: var(--color-forest-900);
+  --color-on-action: var(--color-on-forest);
+  --color-focus: var(--color-forest-800);
+  /* Estados */
+  --color-positive: var(--color-leaf-600);
+  --color-positive-vivid: var(--color-leaf-500);
+  --color-positive-bg: var(--color-leaf-100);
+  --color-warning: var(--color-ochre-600);
+  --color-warning-bg: var(--color-ochre-100);
+  --color-danger: var(--color-brick-600);
+  --color-danger-bg: var(--color-brick-100);
+  /* Superficies translúcidas y divisores */
+  --color-glass: rgb(17 19 17 / 0.05);
+  --color-glass-strong: rgb(17 19 17 / 0.09);
+  --color-glass-on-panel: rgb(243 241 236 / 0.12);
+  --color-line: rgb(17 19 17 / 0.09);
+  --color-scrim: rgb(17 19 17 / 0.45);
 
   /* ── Tipografía ──────────────────────────────── */
-  --font-display: 'Newsreader Variable', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
-  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  /* Sans geométrica moderna; una sola familia con jerarquía por peso/tamaño. */
+  --font-sans: 'Instrument Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: var(--font-sans);
 
-  --text-display-xl: 3.5rem;
-  --text-display-xl--line-height: 0.95;
-  --text-display: 2.5rem;
-  --text-display--line-height: 1;
-  --text-heading: 1.625rem;
-  --text-heading--line-height: 1.05;
-  --text-title: 1.5rem;
-  --text-title--line-height: 1.1;
-  --text-subheading: 1.125rem;
-  --text-subheading--line-height: 1.5;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  /* Display financiero (saldo, cifras protagonistas) */
+  --text-display-xl: 3.25rem;
+  --text-display-xl--line-height: 1;
+  --tracking-display-xl: -0.035em;
+  /* Display (títulos de pantalla) */
+  --text-display: 2.25rem;
+  --text-display--line-height: 1.05;
+  --tracking-display: -0.03em;
+  /* Heading (encabezados de bloque destacado) */
+  --text-heading: 1.75rem;
+  --text-heading--line-height: 1.1;
+  --tracking-heading: -0.025em;
+  /* Title (títulos de sección / hoja) */
+  --text-title: 1.25rem;
+  --text-title--line-height: 1.25;
+  --tracking-title: -0.015em;
+  /* Subheading, body, body-sm, caption, label, button */
+  --text-subheading: 1.0625rem;
+  --text-subheading--line-height: 1.4;
   --text-body: 1rem;
   --text-body--line-height: 1.5;
   --text-body-sm: 0.875rem;
   --text-body-sm--line-height: 1.45;
   --text-caption: 0.75rem;
   --text-caption--line-height: 1.4;
-  --text-label: 0.6875rem;
-  --text-label--line-height: 1.4;
+  --text-label: 0.8125rem;
+  --text-label--line-height: 1.3;
+  --tracking-label: 0.005em;
+  --text-button: 1rem;
+  --text-button--line-height: 1;
+  --tracking-button: -0.005em;
 
-  --tracking-display: -0.02em;
-  --tracking-label: 0.16em;
+  /* ── Espaciado (base 4px; roles semánticos) ──── */
+  --spacing-gutter: 1.25rem; /* margen lateral de pantalla */
+  --spacing-section: 2rem; /* entre bloques */
+  --spacing-card: 1.25rem; /* padding interno de card */
+  --spacing-item: 1rem; /* entre ítems de lista */
+  --spacing-tight: 0.5rem; /* entre elementos relacionados */
+  --spacing-control-h: 3.25rem; /* alto táctil de controles grandes (52px) */
 
   /* ── Radios ──────────────────────────────────── */
-  --radius-control: 0.5rem; /* inputs */
-  --radius-card: 1.5rem;
-  --radius-tile: 1.875rem; /* paneles de color y hojas */
-  --radius-pill: 9999px;
+  --radius-chip: 0.75rem;
+  --radius-control: 1rem; /* inputs */
+  --radius-card: 1.25rem; /* cards y listas */
+  --radius-panel: 1.75rem; /* superficies financieras oscuras / hero */
+  --radius-sheet: 1.75rem; /* hojas modales */
+  --radius-pill: 9999px; /* botones, nav, segmentados */
 
-  /* ── Sombras: solo una, para elementos flotantes ─ */
-  --shadow-float: 0 18px 20px 0 rgb(0 0 0 / 0.2);
+  /* ── Sombras: mínimas ────────────────────────── */
+  --shadow-card: 0 1px 2px rgb(17 19 17 / 0.04), 0 10px 24px -14px rgb(17 19 17 / 0.14);
+  --shadow-float: 0 12px 32px -10px rgb(17 19 17 / 0.28);
 
-  /* ── Movimiento ──────────────────────────────── */
+  /* ── Iconografía ─────────────────────────────── */
+  --icon-size-sm: 16px;
+  --icon-size-md: 20px;
+  --icon-size-lg: 24px;
+  --icon-stroke: 1.6;
+
+  /* ── Microinteracciones ──────────────────────── */
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+  --duration-slow: 400ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --ease-reveal: cubic-bezier(0.455, 0.03, 0.515, 0.955);
-  --animate-rise: rise 0.7s var(--ease-reveal) both;
-  --animate-sheet: sheet 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --press-scale: 0.98;
+  --opacity-disabled: 0.45;
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+
+  --animate-rise: rise 0.6s var(--ease-reveal) both;
+  --animate-sheet: sheet var(--duration-slow) cubic-bezier(0.22, 1, 0.36, 1) both;
   --animate-fade: fade 0.25s ease-out both;
   --animate-shake: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 

@@ -50,9 +50,9 @@ function Shell() {
   }
 
   return (
-    <div className="mx-auto min-h-dvh w-full max-w-md px-5 pb-36">
+    <div className="mx-auto min-h-dvh w-full max-w-md px-gutter pb-36">
       {!persistent ? (
-        <p role="status" className="mt-safe mb-3 rounded-card border border-line bg-glass-strong p-4 text-body-sm text-fg-heading">
+        <p role="status" className="mt-safe mb-3 rounded-card bg-warning-bg p-4 text-body-sm text-warning">
           Tu navegador no permite guardar datos: los movimientos se perderán al cerrar esta pestaña.
         </p>
       ) : null}

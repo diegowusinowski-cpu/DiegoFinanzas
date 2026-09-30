@@ -18,9 +18,9 @@ interface RadioChipsProps<V extends string> {
 }
 
 const TONES = {
-  neutral: 'peer-checked:bg-action peer-checked:text-fg-on-action',
-  income: 'peer-checked:bg-iris-gleam peer-checked:text-void',
-  expense: 'peer-checked:bg-orchid-bloom peer-checked:text-void',
+  neutral: 'peer-checked:bg-action peer-checked:text-on-action',
+  income: 'peer-checked:bg-action peer-checked:text-on-action',
+  expense: 'peer-checked:bg-fg peer-checked:text-canvas',
 }
 
 /** Grupo de opciones excluyentes basado en radios nativos (accesible por teclado). */
@@ -37,7 +37,7 @@ export function RadioChips<V extends string>({
   return (
     <fieldset className="min-w-0">
       <legend className="type-eyebrow mb-2">{legend}</legend>
-      <div className={cx(layout === 'segmented' ? 'grid grid-flow-col auto-cols-fr gap-2 rounded-pill border border-line bg-void p-1' : 'flex flex-wrap gap-2')}>
+      <div className={cx(layout === 'segmented' ? 'grid grid-flow-col auto-cols-fr gap-2 rounded-pill bg-sunken p-1' : 'flex flex-wrap gap-2')}>
         {options.map((option) => (
           <label key={option.value} className="relative">
             <input
@@ -50,8 +50,8 @@ export function RadioChips<V extends string>({
             />
             <span
               className={cx(
-                'flex min-h-11 cursor-pointer items-center justify-center rounded-pill px-4 text-body-sm transition-colors duration-200 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-pure',
-                layout === 'segmented' ? 'text-fg-soft' : 'border border-line bg-glass text-fg-heading hover:bg-glass-strong',
+                'flex min-h-11 cursor-pointer items-center justify-center rounded-pill px-4 text-body-sm interactive peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-focus',
+                layout === 'segmented' ? 'text-fg-soft' : 'bg-sunken text-fg-soft hover:bg-sunken-hover',
                 TONES[tone(option.value)],
               )}
             >

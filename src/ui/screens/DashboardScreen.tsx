@@ -32,25 +32,25 @@ export function DashboardScreen({ onNewTransaction, onNewReminder, onSeeAll }: D
       <BalanceCard balance={finance.balance} loading={loading} />
 
       <section aria-label="Acciones principales" className="grid grid-cols-2 gap-3">
-        <ActionButton tone="orchid" label="Gasto" icon="arrow-up" onClick={() => onNewTransaction('EXPENSE')} disabled={loading} />
-        <ActionButton tone="iris" label="Ingreso" icon="arrow-down" onClick={() => onNewTransaction('INCOME')} disabled={loading} />
+        <ActionButton tone="secondary" label="Gasto" icon="arrow-up" onClick={() => onNewTransaction('EXPENSE')} disabled={loading} />
+        <ActionButton tone="primary" label="Ingreso" icon="arrow-down" onClick={() => onNewTransaction('INCOME')} disabled={loading} />
       </section>
 
       <section aria-labelledby="reminders-title" className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <h2 id="reminders-title" className="type-heading">
+          <h2 id="reminders-title" className="type-title">
             Recordatorios
           </h2>
           <button
             type="button"
             onClick={onNewReminder}
-            className="type-eyebrow min-h-10 shrink-0 whitespace-nowrap rounded-pill px-3 text-fg underline underline-offset-4 transition-colors duration-200 hover:text-fg-heading"
+            className="type-eyebrow interactive min-h-10 shrink-0 whitespace-nowrap rounded-pill px-3 text-fg underline underline-offset-4 hover:bg-glass"
           >
             + Agregar
           </button>
         </div>
         {loading ? (
-          <Skeleton className="h-32 rounded-tile" />
+          <Skeleton className="h-32 rounded-panel" />
         ) : finance.reminders.length === 0 ? (
           <Card>
             <EmptyState icon="bell" title="Sin recordatorios">
@@ -74,14 +74,14 @@ export function DashboardScreen({ onNewTransaction, onNewReminder, onSeeAll }: D
 
       <section aria-labelledby="latest-title" className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <h2 id="latest-title" className="type-heading">
+          <h2 id="latest-title" className="type-title">
             Últimos movimientos
           </h2>
           {finance.history.length > 3 ? (
             <button
               type="button"
               onClick={onSeeAll}
-              className="type-eyebrow min-h-10 shrink-0 whitespace-nowrap rounded-pill px-3 text-fg underline underline-offset-4 transition-colors duration-200 hover:text-fg-heading"
+              className="type-eyebrow interactive min-h-10 shrink-0 whitespace-nowrap rounded-pill px-3 text-fg underline underline-offset-4 hover:bg-glass"
             >
               Ver todos
             </button>
@@ -129,23 +129,28 @@ function ActionButton({
 }: {
   label: string
   icon: 'arrow-up' | 'arrow-down'
-  tone: 'iris' | 'orchid'
+  tone: 'primary' | 'secondary'
   onClick(): void
   disabled: boolean
 }) {
+  const primary = tone === 'primary'
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`flex min-h-36 flex-col items-start justify-between rounded-tile p-5 text-left text-void transition duration-200 ease-out hover:brightness-105 active:scale-[0.98] active:brightness-95 disabled:opacity-40 ${
-        tone === 'iris' ? 'bg-iris-gleam' : 'bg-orchid-bloom'
+      className={`interactive flex min-h-36 flex-col items-start justify-between rounded-panel p-5 text-left ${
+        primary
+          ? 'bg-action text-on-action hover:bg-action-hover active:bg-action-pressed'
+          : 'bg-sunken text-fg hover:bg-sunken-hover active:bg-sunken-hover'
       }`}
     >
-      <span className="grid size-11 place-items-center rounded-pill bg-void text-pure">
-        <Icon name={icon} size={20} />
+      <span
+        className={`grid size-11 place-items-center rounded-pill ${primary ? 'bg-glass-on-panel text-on-action' : 'bg-fg text-canvas'}`}
+      >
+        <Icon name={icon} />
       </span>
-      <span className="type-heading text-void">{label}</span>
+      <span className="type-heading text-current">{label}</span>
     </button>
   )
 }

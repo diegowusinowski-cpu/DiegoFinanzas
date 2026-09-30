@@ -1,8 +1,4 @@
 @import 'tailwindcss';
-@import '@fontsource-variable/inter/wght.css';
-@import '@fontsource-variable/newsreader/wght.css';
-@import '@fontsource-variable/newsreader/wght-italic.css';
-@import '@fontsource/roboto-mono/400.css';
-@import '@fontsource/roboto-mono/500.css';
+@import '@fontsource-variable/instrument-sans/wght.css';
 @import './ui/design/tokens.css';
 @import './ui/design/base.css';

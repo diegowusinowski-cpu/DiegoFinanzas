@@ -22,7 +22,7 @@ const formatRate = (value: number) => rateFormatter.format(value).replace(/\u00a
 export function RatesCard({ state, onRefresh }: { state: RateState; onRefresh(): void }) {
   return (
     <section aria-labelledby="rates-title" className="flex flex-col gap-3">
-      <h2 id="rates-title" className="type-heading">
+      <h2 id="rates-title" className="type-title">
         <button
           type="button"
           onClick={onRefresh}
@@ -30,14 +30,14 @@ export function RatesCard({ state, onRefresh }: { state: RateState; onRefresh():
           className="-ml-1 inline-flex items-center gap-1.5 rounded-control px-1 py-1 text-left"
         >
           Tasas de conversión
-          <Icon name="chevron-right" size={20} className="text-fg-soft" />
+          <Icon name="chevron-right" size="md" className="text-fg-soft" />
         </button>
       </h2>
       <Card className="p-5">
         <div className="mb-4 flex items-center justify-between">
           <p className="text-body font-medium text-fg">Dólar Blue / ARS</p>
-          <span className="grid size-9 place-items-center rounded-pill bg-glass text-data">
-            <Icon name="trend" size={18} />
+          <span className="grid size-9 place-items-center rounded-pill bg-positive-bg text-positive">
+            <Icon name="trend" size="sm" />
           </span>
         </div>
 
@@ -47,27 +47,27 @@ export function RatesCard({ state, onRefresh }: { state: RateState; onRefresh():
             <Skeleton className="h-16" />
           </div>
         ) : state.status === 'unavailable' ? (
-          <div className="flex flex-col items-start gap-3 rounded-2xl bg-void p-4" role="status">
+          <div className="flex flex-col items-start gap-3 rounded-2xl bg-sunken p-4" role="status">
             <p className="text-body-sm text-fg-soft">
               La cotización no está disponible en este momento. El resto de la app sigue funcionando.
             </p>
-            <Button variant="secondary" className="min-h-10 px-5 text-body-sm" onClick={onRefresh}>
-              <Icon name="refresh" size={16} />
+            <Button variant="secondary" size="sm" onClick={onRefresh}>
+              <Icon name="refresh" size="sm" />
               Reintentar
             </Button>
           </div>
         ) : (
           <>
             <dl className="grid grid-cols-2 gap-3">
-              <div className="rounded-2xl bg-void p-4">
+              <div className="rounded-2xl bg-sunken p-4">
                 <dt className="type-eyebrow">Compra</dt>
-                <dd className="mt-2 font-display text-title font-light tabular-nums text-fg" data-testid="rate-buy">
+                <dd className="type-number type-title mt-2 text-fg" data-testid="rate-buy">
                   {formatRate(state.rate.buy)}
                 </dd>
               </div>
-              <div className="rounded-2xl bg-void p-4">
+              <div className="rounded-2xl bg-sunken p-4">
                 <dt className="type-eyebrow">Venta</dt>
-                <dd className="mt-2 font-display text-title font-light tabular-nums text-fg" data-testid="rate-sell">
+                <dd className="type-number type-title mt-2 text-fg" data-testid="rate-sell">
                   {formatRate(state.rate.sell)}
                 </dd>
               </div>

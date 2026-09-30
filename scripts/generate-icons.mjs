@@ -4,9 +4,9 @@ import { writeFileSync } from 'node:fs'
 
 const svg = ({ size, radius, scale }) => `
 <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="${radius}" fill="#111111"/>
+  <rect width="512" height="512" rx="${radius}" fill="#14392a"/>
   <text x="256" y="${256 + 66 * scale}" text-anchor="middle" font-family="Helvetica, Arial, sans-serif"
-        font-weight="800" font-size="${190 * scale}" letter-spacing="${-6 * scale}" fill="#ffffff">DWF</text>
+        font-weight="800" font-size="${190 * scale}" letter-spacing="${-6 * scale}" fill="#f3f1ec">DWF</text>
 </svg>`
 
 const targets = [

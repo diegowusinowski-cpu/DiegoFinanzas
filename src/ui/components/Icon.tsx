@@ -27,7 +27,13 @@ const PATHS: Record<IconName, ReactNode> = {
     </>
   ),
   plus: <path d="M12 5v14M5 12h14" />,
-  more: <path d="M5 12h.01M12 12h.01M19 12h.01" strokeWidth="3" />,
+  more: (
+    <>
+      <circle cx="5.5" cy="12" r="1.2" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none" />
+      <circle cx="18.5" cy="12" r="1.2" fill="currentColor" stroke="none" />
+    </>
+  ),
   'arrow-up': <path d="M12 19V5M5 12l7-7 7 7" />,
   'arrow-down': <path d="M12 5v14M19 12l-7 7-7-7" />,
   'chevron-right': <path d="m9 6 6 6-6 6" />,
@@ -78,25 +84,29 @@ const PATHS: Record<IconName, ReactNode> = {
   trend: <path d="m3 17 6-6 4 4 8-8M15 7h6v6" />,
 }
 
-interface IconProps extends Omit<SVGProps<SVGSVGElement>, 'name'> {
+export type IconSize = 'sm' | 'md' | 'lg'
+
+/** Tamaños y trazo salen de tokens (--icon-size-*, --icon-stroke). */
+interface IconProps extends Omit<SVGProps<SVGSVGElement>, 'name' | 'size'> {
   name: IconName
-  size?: number
+  size?: IconSize
 }
 
-/** Íconos de trazo (24×24). Decorativos por defecto (`aria-hidden`). */
-export function Icon({ name, size = 22, className, ...rest }: IconProps) {
+/** Íconos monolínea (24×24), un solo trazo, color heredado. Decorativos por defecto. */
+export function Icon({ name, size = 'md', className, style, ...rest }: IconProps) {
+  const px = `var(--icon-size-${size})`
   return (
     <svg
-      width={size}
-      height={size}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.5"
+      strokeWidth="var(--icon-stroke)"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
+      focusable="false"
       className={className}
+      style={{ width: px, height: px, flexShrink: 0, ...style }}
       {...rest}
     >
       {PATHS[name]}

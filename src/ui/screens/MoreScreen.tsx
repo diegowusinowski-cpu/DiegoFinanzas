@@ -17,7 +17,7 @@ export function MoreScreen() {
 
       {profile ? (
         <Card className="flex items-center gap-4 p-5">
-          <span className="grid size-12 place-items-center rounded-pill bg-pale-iris font-display text-title font-light text-void">
+          <span className="grid size-12 place-items-center rounded-pill bg-action text-title font-medium text-on-action">
             {profile.displayName.charAt(0)}
           </span>
           <div>
@@ -28,12 +28,12 @@ export function MoreScreen() {
       ) : null}
 
       <Button variant="secondary" block onClick={lock}>
-        <Icon name="lock" size={18} />
+        <Icon name="lock" size="sm" />
         Bloquear DWF
       </Button>
 
       <section aria-labelledby="upcoming-title" className="flex flex-col gap-3">
-        <h2 id="upcoming-title" className="type-heading">
+        <h2 id="upcoming-title" className="type-title">
           Próximamente
         </h2>
         <Card className="px-5 py-1">
@@ -41,7 +41,7 @@ export function MoreScreen() {
             {UPCOMING.map((label) => (
               <li key={label} className="flex items-center justify-between py-4 text-body text-fg-heading">
                 {label}
-                <span className="rounded-pill border border-line bg-glass px-2.5 py-1 font-mono text-[0.625rem] leading-none tracking-[0.12em] text-fg-soft uppercase">En camino</span>
+                <span className="rounded-pill bg-sunken px-2.5 py-1 text-caption leading-none font-medium text-fg-soft">En camino</span>
               </li>
             ))}
           </ul>

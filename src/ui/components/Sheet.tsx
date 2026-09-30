@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { IconButton } from './Button'
 import { Icon } from './Icon'
 
 interface SheetProps {
@@ -58,7 +59,7 @@ export function Sheet({ open, title, onClose, children }: SheetProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
       <div
-        className="absolute inset-0 animate-fade bg-void/60 backdrop-blur-sm"
+        className="absolute inset-0 animate-fade bg-scrim backdrop-blur-[2px]"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -68,21 +69,16 @@ export function Sheet({ open, title, onClose, children }: SheetProps) {
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="relative flex max-h-[92dvh] w-full max-w-md animate-sheet flex-col rounded-t-tile border-t border-line bg-surface outline-none"
+        className="relative flex max-h-[92dvh] w-full max-w-md animate-sheet flex-col rounded-t-sheet bg-surface outline-none"
       >
-        <div className="mx-auto mt-2.5 h-1 w-10 rounded-pill bg-surface-hover" aria-hidden="true" />
+        <div className="mx-auto mt-2.5 h-1 w-10 rounded-pill bg-sunken-hover" aria-hidden="true" />
         <div className="flex items-center justify-between px-6 pt-4 pb-2">
           <h2 id={titleId} className="type-title">
             {title}
           </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="grid size-10 place-items-center rounded-pill bg-glass text-fg-soft transition-colors duration-200 hover:bg-glass-strong"
-          >
-            <Icon name="close" size={18} />
-          </button>
+          <IconButton onClick={onClose} aria-label="Cerrar">
+            <Icon name="close" size="sm" />
+          </IconButton>
         </div>
         <div className="overflow-y-auto px-6 pb-safe pt-2">{children}</div>
       </div>

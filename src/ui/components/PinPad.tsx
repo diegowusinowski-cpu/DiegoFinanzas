@@ -22,8 +22,8 @@ export function PinDots({ length, shake = false, label }: PinDotsProps) {
         <span
           key={i}
           className={cx(
-            'size-3.5 rounded-pill border border-pure transition duration-200 ease-out',
-            i < length ? 'scale-110 bg-pure' : 'bg-transparent',
+            'size-3.5 rounded-pill border border-fg transition duration-200 ease-out',
+            i < length ? 'scale-110 bg-fg' : 'bg-transparent',
           )}
         />
       ))}
@@ -58,7 +58,7 @@ export function PinPad({ onDigit, onBackspace, disabled = false }: PinPadProps) 
   }, [disabled])
 
   const keyClass =
-    'grid h-[4.25rem] w-full place-items-center rounded-card bg-surface text-[2rem] font-light text-fg transition-colors duration-200 select-none hover:bg-surface-hover active:bg-surface-hover disabled:opacity-40'
+    'interactive grid h-[4.25rem] w-full place-items-center rounded-card bg-surface text-[2rem] font-normal text-fg shadow-card select-none hover:bg-sunken active:bg-sunken-hover'
 
   return (
     <div className="grid w-full grid-cols-3 gap-2.5" role="group" aria-label="Teclado numérico">
@@ -73,12 +73,12 @@ export function PinPad({ onDigit, onBackspace, disabled = false }: PinPadProps) 
       </button>
       <button
         type="button"
-        className={cx(keyClass, 'bg-transparent text-fg-soft hover:bg-glass')}
+        className={cx(keyClass, 'bg-transparent text-fg-soft shadow-none hover:bg-glass')}
         disabled={disabled}
         onClick={onBackspace}
         aria-label="Borrar último dígito"
       >
-        <Icon name="backspace" size={26} />
+        <Icon name="backspace" size="lg" />
       </button>
     </div>
   )

@@ -107,7 +107,7 @@ function TransactionForm({ initialType, onDone }: { initialType: TransactionType
           inputMode="decimal"
           autoComplete="off"
           placeholder="0,00"
-          className={`${inputClass} pl-10 font-display text-title font-light tabular-nums`}
+          className={`${inputClass} pl-10 type-number type-title`}
           value={amountText}
           onChange={(e) => setAmountText(e.target.value.replace(/[^\d.,]/g, ''))}
         />
@@ -143,7 +143,7 @@ function TransactionForm({ initialType, onDone }: { initialType: TransactionType
       </div>
 
       {formError ? (
-        <p role="alert" className="rounded-control border border-danger/40 bg-danger/10 p-3 text-body-sm text-danger">
+        <p role="alert" className="rounded-control bg-danger-bg p-3 text-body-sm text-danger">
           {formError}
         </p>
       ) : null}

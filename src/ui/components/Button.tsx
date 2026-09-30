@@ -1,24 +1,39 @@
 import type { ButtonHTMLAttributes } from 'react'
 import { cx } from '../cx'
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
+/**
+ * Variantes del sistema:
+ *  - primary:     acción principal (verde bosque)
+ *  - secondary:   acción de apoyo (arena)
+ *  - tertiary:    acción discreta, sin fondo
+ *  - destructive: acción irreversible o riesgosa
+ */
+export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'destructive'
+export type ButtonSize = 'sm' | 'md'
+
+const VARIANTS: Record<ButtonVariant, string> = {
+  primary: 'bg-action text-on-action hover:bg-action-hover active:bg-action-pressed',
+  secondary: 'bg-sunken text-fg hover:bg-sunken-hover active:bg-sunken-hover',
+  tertiary: 'bg-transparent text-fg hover:bg-glass active:bg-glass-strong',
+  destructive: 'bg-danger-bg text-danger hover:bg-danger/15 active:bg-danger/20',
+}
+
+const SIZES: Record<ButtonSize, string> = {
+  sm: 'min-h-10 gap-1.5 px-5 text-body-sm',
+  md: 'min-h-control-h gap-2 px-7 type-button',
+}
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: Variant
+  variant?: ButtonVariant
+  size?: ButtonSize
   block?: boolean
   loading?: boolean
 }
 
-/** Variantes del sistema: blanco sobre negro es la única acción primaria. */
-const VARIANTS: Record<Variant, string> = {
-  primary: 'bg-action text-fg-on-action hover:bg-cloud active:bg-silver',
-  secondary: 'border border-line bg-glass text-fg hover:bg-glass-strong active:bg-surface-hover',
-  ghost: 'bg-transparent text-fg-soft hover:bg-glass active:bg-glass-strong',
-  danger: 'border border-danger/40 bg-transparent text-danger hover:bg-danger/10 active:bg-danger/20',
-}
-
+/** Botón en píldora. Es la forma estándar de los botones de texto. */
 export function Button({
   variant = 'primary',
+  size = 'md',
   block = false,
   loading = false,
   disabled,
@@ -33,7 +48,8 @@ export function Button({
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       className={cx(
-        'inline-flex min-h-13 items-center justify-center gap-2 rounded-pill px-7 text-body font-normal transition-colors duration-200 ease-out disabled:opacity-40',
+        'interactive inline-flex items-center justify-center rounded-pill font-medium',
+        SIZES[size],
         VARIANTS[variant],
         block && 'w-full',
         className,
@@ -43,6 +59,43 @@ export function Button({
       {loading ? <Spinner /> : null}
       {children}
     </button>
+  )
+}
+
+export type IconButtonSize = 'sm' | 'md' | 'lg'
+
+const ICON_BUTTON_SIZES: Record<IconButtonSize, string> = {
+  sm: 'size-9',
+  md: 'size-11',
+  lg: 'size-14',
+}
+
+interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  /** Obligatorio: el botón no tiene texto visible. */
+  'aria-label': string
+  variant?: ButtonVariant
+  size?: IconButtonSize
+}
+
+/** Botón circular solo con ícono (alto táctil mínimo por tamaño). */
+export function IconButton({
+  variant = 'secondary',
+  size = 'md',
+  className,
+  type = 'button',
+  ...rest
+}: IconButtonProps) {
+  return (
+    <button
+      type={type}
+      className={cx(
+        'interactive grid shrink-0 place-items-center rounded-pill',
+        ICON_BUTTON_SIZES[size],
+        VARIANTS[variant],
+        className,
+      )}
+      {...rest}
+    />
   )
 }
 

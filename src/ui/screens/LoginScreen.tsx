@@ -101,9 +101,9 @@ function PinLogin({ name, phone }: { name: string; phone: string }) {
     <>
       <section className="flex flex-1 flex-col items-center justify-center gap-3 pt-10 text-center animate-rise">
         <h1 className="type-heading text-balance">
-          Bienvenido de nuevo, <em className="italic">{name}</em>
+          Bienvenido de nuevo, <em className="font-semibold not-italic">{name}</em>
         </h1>
-        <p className="font-mono text-body-sm tracking-[0.08em] text-fg-soft" aria-label="Número de teléfono parcialmente oculto">
+        <p className="type-number text-body-sm text-fg-soft" aria-label="Número de teléfono parcialmente oculto">
           {maskPhone(phone)}
         </p>
         <div className="mt-6" key={shake}>
@@ -165,7 +165,7 @@ function ResetAccessSheet({ action, onClose }: { action: ConfirmAction; onClose(
         <Button block loading={busy} onClick={() => void run()}>
           {forgot ? 'Crear un PIN nuevo' : 'Continuar'}
         </Button>
-        <Button block variant="ghost" onClick={onClose}>
+        <Button block variant="tertiary" onClick={onClose}>
           Cancelar
         </Button>
       </div>
@@ -246,7 +246,7 @@ function SetupFlow() {
       <form onSubmit={submitPhone} className="flex flex-1 flex-col justify-center gap-6 animate-rise" noValidate>
         <div className="flex flex-col gap-2 text-center">
           <h1 className="type-heading">
-            Bienvenido, <em className="italic">Diego</em>
+            Bienvenido, <em className="font-semibold not-italic">Diego</em>
           </h1>
           <p className="text-body text-fg-soft">Registrá tu número de teléfono para proteger tu cuenta.</p>
         </div>

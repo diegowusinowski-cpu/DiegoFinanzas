@@ -21,7 +21,7 @@ export function Field({ label, error, hint, prefix, children }: FieldProps) {
       </label>
       <div className="relative">
         {prefix ? (
-          <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center font-display text-title font-light text-fg-soft">
+          <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center type-title text-fg-soft">
             {prefix}
           </span>
         ) : null}
@@ -45,4 +45,4 @@ export function Field({ label, error, hint, prefix, children }: FieldProps) {
 }
 
 export const inputClass =
-  'min-h-13 w-full rounded-control border border-line bg-void px-4 text-body text-fg outline-none transition-colors duration-200 focus:border-pure aria-[invalid=true]:border-danger'
+  'interactive min-h-control-h w-full rounded-control border border-transparent bg-sunken px-4 text-body text-fg outline-none focus:border-fg focus:bg-surface aria-[invalid=true]:border-danger'
