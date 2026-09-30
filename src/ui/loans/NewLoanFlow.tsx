@@ -79,7 +79,6 @@ export function NewLoanFlow({ onClose }: { onClose(): void }) {
       <div key={step} className="flex min-h-0 flex-1 animate-step flex-col">
         {step === 'amount' ? (
           <LoanAmountStep
-            variant="loan"
             amountRaw={draft.amountRaw}
             onChangeAmount={(amountRaw) => patch({ amountRaw })}
             onBack={back}
@@ -87,7 +86,6 @@ export function NewLoanFlow({ onClose }: { onClose(): void }) {
           />
         ) : step === 'installments' ? (
           <InstallmentsStep
-            variant="loan"
             principal={principal}
             count={draft.installmentCount}
             onChangeCount={(installmentCount) => patch({ installmentCount })}

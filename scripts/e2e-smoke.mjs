@@ -167,10 +167,10 @@ async function run(name, device, { mockRate } = {}) {
   await page.getByRole('button', { name: /^Calculadora financiera/ }).click()
   for (const ch of '100000') await page.getByRole('button', { name: ch, exact: true }).click()
   assert.match(await page.getByLabel('Cálculo del préstamo').innerText(), /70\.000,00[\s\S]*170\.000,00/)
-  await page.getByRole('button', { name: 'Continuar' }).click()
-  await page.getByRole('radio', { name: '10 cuotas' }).click()
-  assert.match(await page.getByLabel('Resultado').innerText(), /10 cuotas de \$ 17\.000,00/)
-  await page.getByRole('button', { name: 'Listo' }).click()
+  assert.equal(await page.getByRole('button', { name: 'Continuar' }).count(), 0) // la calculadora es de consulta: sin pasos
+  await page.screenshot({ path: `${OUT}/${name}-5a-calculadora.png` })
+  await page.getByRole('button', { name: 'Cerrar', exact: true }).click()
+  assert.equal(await page.getByTestId('loans-total-lent').textContent(), '$ 0,00') // no creó nada
   await page.getByRole('button', { name: /^Nuevo préstamo/ }).click()
   for (const ch of '1000') await page.getByRole('button', { name: ch, exact: true }).click()
   await page.getByRole('button', { name: 'Continuar' }).click()

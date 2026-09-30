@@ -31,7 +31,7 @@ export function SummaryLine({ label, value, strong = false }: { label: string; v
   )
 }
 
-function DecorativeIcon({ name }: { name: 'loan' | 'calculator' | 'calendar' | 'user' }) {
+export function DecorativeIcon({ name }: { name: 'loan' | 'calculator' | 'calendar' | 'user' }) {
   return (
     <span className="grid size-control-md place-items-center rounded-pill bg-sunken text-fg">
       <Icon name={name} />
@@ -39,46 +39,41 @@ function DecorativeIcon({ name }: { name: 'loan' | 'calculator' | 'calendar' | '
   )
 }
 
-const BOTTOM_BAR = 'shrink-0 px-gutter pt-2 pb-safe'
+export const BOTTOM_BAR = 'shrink-0 px-gutter pt-2 pb-safe'
 
 /* ── Paso 1: monto a prestar, con teclado y cálculo en vivo ─────────────── */
 
 interface LoanAmountStepProps {
-  variant: 'loan' | 'calculator'
   amountRaw: string
   onChangeAmount(raw: string): void
   onBack(): void
   onContinue(): void
 }
 
-export function LoanAmountStep({ variant, amountRaw, onChangeAmount, onBack, onContinue }: LoanAmountStepProps) {
+export function LoanAmountStep({ amountRaw, onChangeAmount, onBack, onContinue }: LoanAmountStepProps) {
   const minor = parseAmountToMinor(amountRaw)
   const valid = minor !== null && minor > 0
   const calc = calculateLoan(minor ?? 0)
-  const calculator = variant === 'calculator'
 
   return (
     <>
       <FlowHeader
         onBack={onBack}
         backLabel="Volver"
-        title={calculator ? 'Calculadora financiera' : 'Monto a prestar'}
+        title="Monto a prestar"
         heading
-        subtitle={calculator ? 'Interés fijo del 70%' : `Nuevo préstamo · Interés ${LOAN_INTEREST_PERCENT}%`}
-        trailing={<DecorativeIcon name={calculator ? 'calculator' : 'loan'} />}
+        subtitle={`Nuevo préstamo · Interés ${LOAN_INTEREST_PERCENT}%`}
+        trailing={<DecorativeIcon name="loan" />}
       />
 
       <section className="flex min-h-0 flex-1 flex-col items-center justify-center gap-5 px-gutter text-center">
         <div className="flex flex-col items-center gap-2">
           <AmountDisplay text={formatAmountInput(amountRaw)} currency="ARS" empty={!valid} />
-          <p className="text-body text-fg-muted">{calculator ? 'Monto a prestar' : 'Escribí el monto a prestar'}</p>
+          <p className="text-body text-fg-muted">Escribí el monto a prestar</p>
         </div>
         <dl className="flex w-full flex-col gap-2" aria-label="Cálculo del préstamo">
-          <SummaryLine label={calculator ? 'Monto' : 'Monto prestado'} value={formatMoney(calc.principal)} />
-          <SummaryLine
-            label={calculator ? `Interés (${LOAN_INTEREST_PERCENT}%)` : `Interés ${LOAN_INTEREST_PERCENT}%`}
-            value={formatMoney(calc.interest)}
-          />
+          <SummaryLine label="Monto prestado" value={formatMoney(calc.principal)} />
+          <SummaryLine label={`Interés ${LOAN_INTEREST_PERCENT}%`} value={formatMoney(calc.interest)} />
           <SummaryLine label="Total a devolver" value={formatMoney(calc.total)} strong />
         </dl>
       </section>
@@ -98,24 +93,20 @@ export function LoanAmountStep({ variant, amountRaw, onChangeAmount, onBack, onC
 /* ── Paso 2: cantidad de cuotas ─────────────────────────────────────────── */
 
 interface InstallmentsStepProps {
-  variant: 'loan' | 'calculator'
   /** Monto prestado en centavos. */
   principal: number
   count: number | null
   onChangeCount(count: number | null): void
   onBack(): void
   onContinue(): void
-  continueLabel?: string
 }
 
 export function InstallmentsStep({
-  variant,
   principal,
   count,
   onChangeCount,
   onBack,
   onContinue,
-  continueLabel = 'Continuar',
 }: InstallmentsStepProps) {
   const [custom, setCustom] = useState('')
   const calc = calculateLoan(principal, count)
@@ -137,9 +128,9 @@ export function InstallmentsStep({
       <FlowHeader
         onBack={onBack}
         backLabel="Volver"
-        title={variant === 'calculator' ? 'Calculadora financiera' : 'Cuotas'}
+        title="Cuotas"
         subtitle={`Total a devolver ${formatMoney(calc.total)}`}
-        trailing={<DecorativeIcon name={variant === 'calculator' ? 'calculator' : 'loan'} />}
+        trailing={<DecorativeIcon name="loan" />}
       />
 
       <main className="min-h-0 flex-1 overflow-y-auto px-gutter pt-4">
@@ -201,7 +192,7 @@ export function InstallmentsStep({
 
       <div className={BOTTOM_BAR}>
         <Button block size="lg" disabled={count === null} onClick={onContinue}>
-          {continueLabel}
+          Continuar
         </Button>
       </div>
     </>

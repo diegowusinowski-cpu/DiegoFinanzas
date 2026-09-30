@@ -93,39 +93,83 @@ describe('Préstamos: sección principal', () => {
 })
 
 describe('Calculadora financiera', () => {
-  it('$100.000 → interés $70.000, total $170.000; 10 cuotas → $17.000 por cuota; no crea nada', async () => {
-    const { user, services } = await setup()
+  async function openCalculator(user: UserEvent) {
     await openLoans(user)
     await user.click(screen.getByRole('button', { name: /^Calculadora financiera/ }))
+    return screen.findByRole('heading', { name: 'Calculadora financiera' })
+  }
 
-    expect(screen.getByRole('button', { name: 'Continuar' })).toBeDisabled()
+  it('$100.000 → interés $70.000, total $170.000, en una sola pantalla y sin "Continuar"', async () => {
+    const { user } = await setup()
+    await openCalculator(user)
+
+    expect(screen.queryByRole('button', { name: 'Continuar' })).not.toBeInTheDocument()
     await typeAmount(user, '100000')
     expect(screen.getByTestId('amount-display')).toHaveTextContent('100.000 ARS')
     const calc = within(screen.getByLabelText('Cálculo del préstamo'))
-    expect(calc.getByText('Monto').nextElementSibling).toHaveTextContent('$ 100.000,00')
-    expect(calc.getByText('Interés (70%)').nextElementSibling).toHaveTextContent('$ 70.000,00')
+    expect(calc.getByText('Monto a prestar').nextElementSibling).toHaveTextContent('$ 100.000,00')
+    expect(calc.getByText('Interés 70%').nextElementSibling).toHaveTextContent('$ 70.000,00')
     expect(calc.getByText('Total a devolver').nextElementSibling).toHaveTextContent('$ 170.000,00')
 
-    await user.click(screen.getByRole('button', { name: 'Continuar' }))
-    await user.click(await screen.findByRole('radio', { name: '10 cuotas' }))
-    const result = screen.getByLabelText('Resultado')
-    expect(result).toHaveTextContent('10 cuotas de $ 17.000,00')
-    expect(result).toHaveTextContent('$ 170.000,00 ÷ 10 cuotas')
+    // Sigue en la misma pantalla: no hay pasos, cuotas, nombre ni fechas.
+    expect(screen.queryByRole('button', { name: 'Continuar' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Nombre')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/Fecha/)).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Calculadora financiera' })).toBeInTheDocument()
+  })
 
-    // Es solo una herramienta: nada se guardó.
+  it('el cálculo se actualiza al teclear y al borrar', async () => {
+    const { user } = await setup()
+    await openCalculator(user)
+    const total = () => within(screen.getByLabelText('Cálculo del préstamo')).getByText('Total a devolver').nextElementSibling
+    expect(total()).toHaveTextContent('$ 0,00')
+    await typeAmount(user, '1000')
+    expect(total()).toHaveTextContent('$ 1.700,00')
+    await user.click(screen.getByRole('button', { name: 'Borrar último dígito' }))
+    expect(total()).toHaveTextContent('$ 170,00')
+  })
+
+  it('no crea ni modifica nada: ni préstamos, cuotas, movimientos ni saldo; se cierra y vuelve a Préstamos', async () => {
+    const { user, services, receipts } = await setup()
+    await openCalculator(user)
+    await typeAmount(user, '100000')
+    await user.click(screen.getByRole('button', { name: 'Cerrar' }))
+
+    expect(screen.queryByRole('heading', { name: 'Calculadora financiera' })).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Préstamos', level: 1 })).toBeInTheDocument()
     expect(await services.repositories.loans.listLoans()).toHaveLength(0)
+    expect(await services.repositories.loans.listInstallments()).toHaveLength(0)
     expect(await services.repositories.transactions.list()).toHaveLength(1) // solo el saldo previo
-    await user.click(screen.getByRole('button', { name: 'Listo' }))
+    expect(receipts.rendered).toHaveLength(0)
+    expect(screen.getByTestId('loans-total-lent')).toHaveTextContent('$ 0,00')
     await user.click(navButton('Inicio'))
     expect(balance()).toBe('$ 500.000,00')
   })
 
-  it('cuotas fuera de los atajos: "Otra cantidad"', async () => {
+  it('también se cierra con la flecha y con Escape', async () => {
     const { user } = await setup()
+    await openCalculator(user)
+    await user.click(screen.getByRole('button', { name: 'Cerrar calculadora' }))
+    expect(screen.queryByRole('heading', { name: 'Calculadora financiera' })).not.toBeInTheDocument()
+    await openCalculator(user)
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('heading', { name: 'Calculadora financiera' })).not.toBeInTheDocument()
+  })
+})
+
+describe('Cuotas de un préstamo nuevo', () => {
+  async function goToInstallments(user: UserEvent) {
     await openLoans(user)
-    await user.click(screen.getByRole('button', { name: /^Calculadora financiera/ }))
+    await user.click(screen.getByRole('button', { name: /^Nuevo préstamo/ }))
     await typeAmount(user, '100000')
     await user.click(screen.getByRole('button', { name: 'Continuar' }))
+    return screen.findByRole('radiogroup', { name: 'Cantidad de cuotas' })
+  }
+
+  it('cuotas fuera de los atajos: "Otra cantidad"', async () => {
+    const { user } = await setup()
+    await goToInstallments(user)
     await user.type(await screen.findByLabelText('Otra cantidad'), '15')
     expect(screen.getByLabelText('Resultado')).toHaveTextContent('15 cuotas de $ 11.333,34')
     // Elegir un atajo reemplaza la cantidad personalizada.
@@ -136,14 +180,19 @@ describe('Calculadora financiera', () => {
 
   it('ofrece las cuotas 1 a 10 y 12', async () => {
     const { user } = await setup()
-    await openLoans(user)
-    await user.click(screen.getByRole('button', { name: /^Calculadora financiera/ }))
-    await typeAmount(user, '1000')
-    await user.click(screen.getByRole('button', { name: 'Continuar' }))
-    const group = await screen.findByRole('radiogroup', { name: 'Cantidad de cuotas' })
+    const group = await goToInstallments(user)
     expect(within(group).getAllByRole('radio').map((r) => r.textContent)).toEqual(
       ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '12'],
     )
+  })
+
+  it('10 cuotas → $17.000 por cuota', async () => {
+    const { user } = await setup()
+    await goToInstallments(user)
+    await user.click(screen.getByRole('radio', { name: '10 cuotas' }))
+    const result = screen.getByLabelText('Resultado')
+    expect(result).toHaveTextContent('10 cuotas de $ 17.000,00')
+    expect(result).toHaveTextContent('$ 170.000,00 ÷ 10 cuotas')
   })
 })
 
