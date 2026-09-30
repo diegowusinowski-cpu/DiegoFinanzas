@@ -1,4 +1,4 @@
-import type { MinorUnits } from './models.ts'
+import type { CurrencyCode, MinorUnits } from './models.ts'
 
 /** Tope defensivo: mantiene los montos dentro del rango de enteros seguros. */
 export const MAX_MINOR_UNITS: MinorUnits = 9_999_999_999_999 // $ 99.999.999.999,99
@@ -17,9 +17,17 @@ const arsCompactFormatter = new Intl.NumberFormat('es-AR', {
   maximumFractionDigits: 2,
 })
 
-/** `123456` → `$ 1.234,56` */
-export function formatMoney(minor: MinorUnits): string {
-  return arsFormatter.format(minor / 100).replace(/\u00a0/g, ' ')
+const usdFormatter = new Intl.NumberFormat('es-AR', {
+  style: 'currency',
+  currency: 'USD',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+})
+
+/** `123456` → `$ 1.234,56` (ARS) · `US$ 1.234,56` (USD) */
+export function formatMoney(minor: MinorUnits, currency: CurrencyCode = 'ARS'): string {
+  const formatter = currency === 'USD' ? usdFormatter : arsFormatter
+  return formatter.format(minor / 100).replace(/\u00a0/g, ' ')
 }
 
 /** Igual que `formatMoney` pero sin decimales cuando son `,00`. */

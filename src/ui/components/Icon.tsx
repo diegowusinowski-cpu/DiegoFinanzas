@@ -17,6 +17,12 @@ export type IconName =
   | 'close'
   | 'clock'
   | 'trend'
+  | 'chevron-left'
+  | 'chevron-down'
+  | 'arrow-left'
+  | 'arrow-right'
+  | 'check'
+  | 'user'
 
 const PATHS: Record<IconName, ReactNode> = {
   home: <path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />,
@@ -82,6 +88,17 @@ const PATHS: Record<IconName, ReactNode> = {
     </>
   ),
   trend: <path d="m3 17 6-6 4 4 8-8M15 7h6v6" />,
+  'chevron-left': <path d="m15 6-6 6 6 6" />,
+  'chevron-down': <path d="m6 9 6 6 6-6" />,
+  'arrow-left': <path d="M19 12H5M12 5l-7 7 7 7" />,
+  'arrow-right': <path d="M5 12h14M12 5l7 7-7 7" />,
+  check: <path d="m5 12.5 4.5 4.5L19 7.5" />,
+  user: (
+    <>
+      <circle cx="12" cy="8" r="3.5" />
+      <path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5" />
+    </>
+  ),
 }
 
 export type IconSize = 'sm' | 'md' | 'lg'

@@ -19,13 +19,25 @@ export const STORAGE_KEYS = {
 
 export const DEFAULT_ACCOUNT_ID = 'acc-main'
 
+/** Completa los campos agregados después de la primera versión (siempre ARS / Argentina / Individual). */
+function withFlowDefaults(t: Transaction): Transaction {
+  return {
+    ...t,
+    country: t.country ?? 'AR',
+    currency: t.currency ?? 'ARS',
+    holder: t.holder ?? 'INDIVIDUAL',
+    paymentMethod: t.paymentMethod ?? null,
+  }
+}
+
 class LocalTransactionRepository implements TransactionRepository {
   private readonly collection: LocalCollection<Transaction>
   constructor(storage: KeyValueStorage) {
     this.collection = new LocalCollection(storage, STORAGE_KEYS.transactions)
   }
   async list() {
-    return this.collection.read()
+    // Los movimientos anteriores al flujo completo no traían país/moneda/titular.
+    return this.collection.read().map(withFlowDefaults)
   }
   async add(transaction: Transaction) {
     this.collection.upsertMany([transaction])
@@ -66,12 +78,11 @@ class LocalCategoryRepository implements CategoryRepository {
   }
   async list() {
     const stored = this.collection.read()
-    // Las categorías del sistema se siembran; las que agregue el usuario en el
-    // futuro se conservan.
-    const missing = DEFAULT_CATEGORIES.filter((d) => !stored.some((c) => c.id === d.id))
-    if (missing.length === 0) return stored
-    const merged = [...stored, ...missing]
-    this.collection.write(merged)
+    // Las categorías del sistema siempre se toman del catálogo vigente; las que
+    // agregue el usuario en el futuro se conservan.
+    const systemIds = new Set(DEFAULT_CATEGORIES.map((c) => c.id))
+    const merged = [...DEFAULT_CATEGORIES, ...stored.filter((c) => !systemIds.has(c.id))]
+    if (JSON.stringify(merged) !== JSON.stringify(stored)) this.collection.write(merged)
     return merged
   }
 }

@@ -4,6 +4,7 @@ import { computeBalance } from './balance'
 import type { Transaction } from './models'
 import {
   buildTransaction,
+  currencyForCountry,
   cancelTransaction,
   latestTransactions,
   settleDueTransactions,
@@ -172,5 +173,32 @@ describe('ciclo de vida', () => {
     expect(after.changed).toHaveLength(1)
     expect(after.transactions[0]?.status).toBe('COMPLETED')
     expect(computeBalance(after.transactions)).toBe(-1000)
+  })
+})
+
+describe('moneda, país y tipo de operación', () => {
+  it('por defecto: Argentina / ARS / Individual y sin tipo de operación', () => {
+    const t = buildTransaction(input(), { id: 'x', now: NOW })
+    expect(t).toMatchObject({ country: 'AR', currency: 'ARS', holder: 'INDIVIDUAL', paymentMethod: null })
+  })
+
+  it('Estados Unidos opera en USD y guarda el tipo de operación', () => {
+    const t = buildTransaction(input({ country: 'US', paymentMethod: 'CASH' }), { id: 'x', now: NOW })
+    expect(t).toMatchObject({ country: 'US', currency: 'USD', paymentMethod: 'CASH' })
+  })
+
+  it('currencyForCountry', () => {
+    expect(currencyForCountry('AR')).toBe('ARS')
+    expect(currencyForCountry('US')).toBe('USD')
+  })
+
+  it('el saldo no mezcla monedas', () => {
+    const list = [
+      tx({ type: 'INCOME', categoryId: 'inc-loans', amount: 100_000 }),
+      tx({ country: 'US', type: 'INCOME', categoryId: 'inc-loans', amount: 5_000 }),
+      tx({ country: 'US', amount: 1_200 }),
+    ]
+    expect(computeBalance(list)).toBe(100_000)
+    expect(computeBalance(list, undefined, 'USD')).toBe(3_800)
   })
 })

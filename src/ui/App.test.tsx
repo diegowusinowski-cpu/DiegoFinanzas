@@ -1,66 +1,26 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
-import userEvent, { type UserEvent } from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
-import type { AppServices } from '@/services/container'
-import { AuthProvider } from '@/state/AuthContext'
-import { ServicesProvider } from '@/state/ServicesContext'
+import { screen, within } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { addMovement, balance, firstRun, mount, pressPin, setupUser } from '@/test/flowHelpers'
 import { createTestServices, fakeRates } from '@/test/services'
-import { App } from './App'
-import { ToastProvider } from './components/Toast'
 
-function mount(services: AppServices) {
-  return render(
-    <ServicesProvider services={services}>
-      <ToastProvider>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
-      </ToastProvider>
-    </ServicesProvider>,
-  )
+afterEach(() => {
+  vi.useRealTimers()
+})
+
+async function lock(user: ReturnType<typeof setupUser>) {
+  await user.click(screen.getByRole('button', { name: 'Más' }))
+  await user.click(screen.getByRole('button', { name: 'Bloquear DWF' }))
 }
-
-async function pressPin(user: UserEvent, pin: string) {
-  for (const digit of pin) await user.click(screen.getByRole('button', { name: digit }))
-}
-
-async function firstRun(user: UserEvent, services = createTestServices()) {
-  mount(services)
-  await user.type(await screen.findByLabelText('Número de teléfono'), '11 2345 6789')
-  await user.click(screen.getByRole('button', { name: 'Continuar' }))
-  await pressPin(user, '1234')
-  await pressPin(user, '1234')
-  await screen.findByTestId('balance')
-  return services
-}
-
-async function addMovement(
-  user: UserEvent,
-  kind: 'Gasto' | 'Ingreso',
-  data: { amount: string; description: string; category: string; date?: string; time?: string },
-) {
-  await user.click(screen.getByRole('button', { name: kind }))
-  const dialog = await screen.findByRole('dialog', { name: 'Nuevo movimiento' })
-  const form = within(dialog)
-  await user.type(form.getByLabelText('Monto'), data.amount)
-  await user.type(form.getByLabelText('Descripción'), data.description)
-  await user.click(form.getByLabelText(data.category))
-  if (data.date) fireEvent.change(form.getByLabelText('Fecha'), { target: { value: data.date } })
-  if (data.time) fireEvent.change(form.getByLabelText('Hora'), { target: { value: data.time } })
-  await user.click(form.getByRole('button', { name: /Registrar/ }))
-}
-
-const balance = () => screen.getByTestId('balance').textContent
 
 describe('Acceso', () => {
   it('primer ingreso: teléfono + PIN dos veces y entra al dashboard', async () => {
-    const user = userEvent.setup()
+    const user = setupUser()
     const services = await firstRun(user)
     expect(await services.auth.getProfile()).toMatchObject({ phone: '+5491123456789' })
   })
 
   it('el PIN no coincide: vuelve a empezar', async () => {
-    const user = userEvent.setup()
+    const user = setupUser()
     mount(createTestServices())
     await user.type(await screen.findByLabelText('Número de teléfono'), '1123456789')
     await user.click(screen.getByRole('button', { name: 'Continuar' }))
@@ -71,7 +31,7 @@ describe('Acceso', () => {
   })
 
   it('valida el teléfono', async () => {
-    const user = userEvent.setup()
+    const user = setupUser()
     mount(createTestServices())
     await user.type(await screen.findByLabelText('Número de teléfono'), '12')
     await user.click(screen.getByRole('button', { name: 'Continuar' }))
@@ -79,10 +39,9 @@ describe('Acceso', () => {
   })
 
   it('muestra la pantalla de acceso con saludo, teléfono oculto, 4 indicadores y opciones', async () => {
-    const user = userEvent.setup()
+    const user = setupUser()
     const services = await firstRun(user)
-    await user.click(screen.getByRole('button', { name: 'Más' }))
-    await user.click(screen.getByRole('button', { name: 'Bloquear DWF' }))
+    await lock(user)
 
     expect(await screen.findByRole('heading', { name: 'Bienvenido de nuevo, Diego' })).toBeInTheDocument()
     expect(screen.getByText('DWF')).toBeInTheDocument()
@@ -98,23 +57,21 @@ describe('Acceso', () => {
   })
 
   it('PIN incorrecto muestra error; el correcto entra', async () => {
-    const user = userEvent.setup()
+    const user = setupUser()
     await firstRun(user)
-    await user.click(screen.getByRole('button', { name: 'Más' }))
-    await user.click(screen.getByRole('button', { name: 'Bloquear DWF' }))
+    await lock(user)
     await screen.findByRole('heading', { name: /Bienvenido de nuevo/ })
 
     await pressPin(user, '0000')
     expect(await screen.findByText(/PIN incorrecto. Te quedan 4 intentos/)).toBeInTheDocument()
     await pressPin(user, '1234')
-    expect(await screen.findByText('Saldo disponible')).toBeInTheDocument()
+    expect(await screen.findByTestId('balance')).toBeInTheDocument()
   })
 
   it('bloquea el teclado tras 5 intentos fallidos', async () => {
-    const user = userEvent.setup()
+    const user = setupUser()
     await firstRun(user)
-    await user.click(screen.getByRole('button', { name: 'Más' }))
-    await user.click(screen.getByRole('button', { name: 'Bloquear DWF' }))
+    await lock(user)
     await screen.findByRole('heading', { name: /Bienvenido de nuevo/ })
     for (const left of ['4 intentos', '3 intentos', '2 intentos', '1 intento']) {
       await pressPin(user, '9999')
@@ -125,13 +82,12 @@ describe('Acceso', () => {
     expect(screen.getByRole('button', { name: '1' })).toBeDisabled()
   })
 
-  it('"No recuerdo mi contraseña" y "Usar otro número" reinician el acceso sin borrar movimientos', async () => {
-    const user = userEvent.setup()
+  it('"No recuerdo mi contraseña" reinicia el acceso sin borrar movimientos', async () => {
+    const user = setupUser()
     const services = await firstRun(user)
-    await addMovement(user, 'Ingreso', { amount: '1000', description: 'Cobro', category: 'Cobro' })
+    await addMovement(user, 'Ingreso', { category: 'Trabajo en relación de dependencia', amount: '1000', concept: 'Cobro' })
     await screen.findByText('Cobro')
-    await user.click(screen.getByRole('button', { name: 'Más' }))
-    await user.click(screen.getByRole('button', { name: 'Bloquear DWF' }))
+    await lock(user)
 
     await user.click(await screen.findByRole('button', { name: 'No recuerdo mi contraseña' }))
     const dialog = await screen.findByRole('dialog', { name: 'Recuperar acceso' })
@@ -143,7 +99,7 @@ describe('Acceso', () => {
 
 describe('Dashboard', () => {
   it('estado inicial: saldo $ 0,00, sin datos ficticios, con marca DWF y sin ARQ', async () => {
-    const user = userEvent.setup()
+    const user = setupUser()
     await firstRun(user)
     expect(balance()).toBe('$ 0,00')
     expect(screen.getByText('Sin recordatorios')).toBeInTheDocument()
@@ -157,7 +113,7 @@ describe('Dashboard', () => {
   })
 
   it('cabecera de cuenta: sin rótulo visible, ARS • Datos de cuenta, y acciones Ingreso | Gasto', async () => {
-    const user = userEvent.setup()
+    const user = setupUser()
     await firstRun(user)
     expect(screen.getByText('ARS • Datos de cuenta')).toBeInTheDocument()
     expect(screen.getByText('Saldo disponible')).toHaveClass('sr-only')
@@ -165,16 +121,16 @@ describe('Dashboard', () => {
     expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Ingreso', 'Gasto'])
   })
 
-  it('el ingreso suma y el gasto resta, y el saldo se actualiza al instante', async () => {
-    const user = userEvent.setup()
+  it('el ingreso suma y el gasto resta, y el saldo se actualiza al volver al Home', async () => {
+    const user = setupUser()
     await firstRun(user)
 
-    await addMovement(user, 'Ingreso', { amount: '10.000', description: 'Sueldo octubre', category: 'Sueldo' })
+    await addMovement(user, 'Ingreso', { category: 'Trabajo en relación de dependencia', amount: '10000', concept: 'Sueldo octubre' })
     expect(await screen.findByText('Sueldo octubre')).toBeInTheDocument()
     expect(balance()).toBe('$ 10.000,00')
 
-    await addMovement(user, 'Gasto', { amount: '2.500,50', description: 'Supermercado', category: 'Comida' })
-    expect(await screen.findByText('Supermercado')).toBeInTheDocument()
+    await addMovement(user, 'Gasto', { category: 'Transporte y movilidad', amount: '2500,5', concept: 'Colectivo' })
+    expect(await screen.findByText('Colectivo')).toBeInTheDocument()
     expect(balance()).toBe('$ 7.499,50')
 
     const list = screen.getByTestId('latest-movements')
@@ -183,23 +139,31 @@ describe('Dashboard', () => {
     expect(screen.queryByText('Todavía no hay movimientos')).not.toBeInTheDocument()
   })
 
-  it('el saldo puede quedar negativo', async () => {
-    const user = userEvent.setup()
+  it('sin concepto, el movimiento se llama como su categoría', async () => {
+    const user = setupUser()
     await firstRun(user)
-    await addMovement(user, 'Gasto', { amount: '300', description: 'Taxi', category: 'Transporte' })
+    await addMovement(user, 'Gasto', { category: 'Suscripciones y tecnología', amount: '900' })
+    const list = screen.getByTestId('latest-movements')
+    expect(within(list).getByText('Suscripciones y tecnología')).toBeInTheDocument()
+  })
+
+  it('el saldo puede quedar negativo', async () => {
+    const user = setupUser()
+    await firstRun(user)
+    await addMovement(user, 'Gasto', { category: 'Transporte y movilidad', amount: '300', concept: 'Taxi' })
     await screen.findByText('Taxi')
     expect(balance()).toMatch(/300,00/)
     expect(balance()).toMatch(/^-|−/)
   })
 
   it('muestra exactamente los 3 movimientos más recientes', async () => {
-    const user = userEvent.setup()
+    const user = setupUser()
     await firstRun(user)
-    const today = '2026-10-06'
-    await addMovement(user, 'Gasto', { amount: '10', description: 'Mov A', category: 'Comida', date: '2026-10-01', time: '10:00' })
-    await addMovement(user, 'Gasto', { amount: '20', description: 'Mov B', category: 'Comida', date: '2026-10-03', time: '10:00' })
-    await addMovement(user, 'Ingreso', { amount: '30', description: 'Mov C', category: 'Cobro', date: '2026-10-04', time: '10:00' })
-    await addMovement(user, 'Gasto', { amount: '40', description: 'Mov D', category: 'Comida', date: today, time: '09:00' })
+    const food = { category: 'Transporte y movilidad' }
+    await addMovement(user, 'Gasto', { ...food, amount: '10', concept: 'Mov A', date: '2026-10-01' })
+    await addMovement(user, 'Gasto', { ...food, amount: '20', concept: 'Mov B', date: '2026-10-03' })
+    await addMovement(user, 'Ingreso', { category: 'Préstamos', amount: '30', concept: 'Mov C', date: '2026-10-04' })
+    await addMovement(user, 'Gasto', { ...food, amount: '40', concept: 'Mov D', date: '2026-10-05' })
 
     const list = await screen.findByTestId('latest-movements')
     const items = within(list).getAllByRole('listitem')
@@ -208,42 +172,13 @@ describe('Dashboard', () => {
     expect(items[1]).toHaveTextContent('Mov C')
     expect(items[2]).toHaveTextContent('Mov B')
     expect(within(list).queryByText('Mov A')).not.toBeInTheDocument()
-    // saldo = -10 -20 +30 -40 = -40
-    expect(balance()).toMatch(/40,00/)
-  })
-
-  it('valida el formulario y no guarda datos inválidos', async () => {
-    const user = userEvent.setup()
-    await firstRun(user)
-    await user.click(screen.getByRole('button', { name: 'Gasto' }))
-    const dialog = await screen.findByRole('dialog')
-    await user.click(within(dialog).getByRole('button', { name: 'Registrar gasto' }))
-    expect(within(dialog).getByText(/monto válido/)).toBeInTheDocument()
-
-    await user.type(within(dialog).getByLabelText('Monto'), '50')
-    await user.click(within(dialog).getByRole('button', { name: 'Registrar gasto' }))
-    expect(await within(dialog).findByText('Escribí una descripción.')).toBeInTheDocument()
-    expect(within(dialog).getByText('Elegí una categoría.')).toBeInTheDocument()
-    expect(balance()).toBe('$ 0,00')
-  })
-
-  it('cambiar de tipo muestra las categorías correspondientes y limpia la elegida', async () => {
-    const user = userEvent.setup()
-    await firstRun(user)
-    await user.click(screen.getByRole('button', { name: 'Gasto' }))
-    const dialog = await screen.findByRole('dialog')
-    await user.click(within(dialog).getByLabelText('Comida'))
-    expect(within(dialog).queryByLabelText('Sueldo')).not.toBeInTheDocument()
-    await user.click(within(dialog).getByLabelText('Ingreso'))
-    expect(within(dialog).getByLabelText('Sueldo')).toBeInTheDocument()
-    expect(within(dialog).queryByLabelText('Comida')).not.toBeInTheDocument()
-    expect(within(dialog).getByLabelText('Sueldo')).not.toBeChecked()
+    expect(balance()).toMatch(/40,00/) // -10 -20 +30 -40
   })
 
   it('un movimiento futuro queda programado y no altera el saldo', async () => {
-    const user = userEvent.setup()
+    const user = setupUser()
     await firstRun(user)
-    await addMovement(user, 'Gasto', { amount: '999', description: 'Futuro', category: 'Hogar', date: '2027-01-01', time: '10:00' })
+    await addMovement(user, 'Gasto', { category: 'Salidas y ocio', amount: '999', concept: 'Futuro', date: '2027-01-01' })
     await user.click(await screen.findByRole('button', { name: 'Movimientos' }))
     expect(await screen.findByText('Programado')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Inicio' }))
@@ -251,19 +186,28 @@ describe('Dashboard', () => {
     expect(screen.getByText('Todavía no hay movimientos')).toBeInTheDocument()
   })
 
-  it('el "+" central abre el formulario de movimiento', async () => {
-    const user = userEvent.setup()
+  it('el "+" central pregunta Ingreso o Gasto y abre el flujo', async () => {
+    const user = setupUser()
     await firstRun(user)
     await user.click(screen.getByRole('button', { name: 'Registrar movimiento' }))
-    expect(await screen.findByRole('dialog', { name: 'Nuevo movimiento' })).toBeInTheDocument()
+    const chooser = await screen.findByRole('dialog', { name: 'Nuevo movimiento' })
+    await user.click(within(chooser).getByRole('button', { name: /^Gasto/ }))
+    expect(await screen.findByRole('heading', { name: 'Elegí el país' })).toBeInTheDocument()
+  })
+
+  it('el "+" se puede cerrar con Escape', async () => {
+    const user = setupUser()
+    await firstRun(user)
+    await user.click(screen.getByRole('button', { name: 'Registrar movimiento' }))
+    await screen.findByRole('dialog')
     await user.keyboard('{Escape}')
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   it('los movimientos y el saldo sobreviven a un reinicio de la app', async () => {
-    const user = userEvent.setup()
+    const user = setupUser()
     const services = await firstRun(user)
-    await addMovement(user, 'Ingreso', { amount: '5000', description: 'Persistente', category: 'Venta' })
+    await addMovement(user, 'Ingreso', { category: 'Ventas ocasionales o emprendimiento', amount: '5000', concept: 'Persistente' })
     await screen.findByText('Persistente')
     document.body.innerHTML = ''
 
@@ -275,7 +219,7 @@ describe('Dashboard', () => {
 
 describe('Recordatorios', () => {
   it('permite crear varios y descartarlos', async () => {
-    const user = userEvent.setup()
+    const user = setupUser()
     await firstRun(user)
     for (const title of ['Cuota el 6 de Octubre', 'Cobrar alquiler']) {
       await user.click(screen.getByRole('button', { name: '+ Agregar' }))
@@ -293,7 +237,7 @@ describe('Recordatorios', () => {
   })
 
   it('exige título', async () => {
-    const user = userEvent.setup()
+    const user = setupUser()
     await firstRun(user)
     await user.click(screen.getByRole('button', { name: '+ Agregar' }))
     const dialog = await screen.findByRole('dialog')
@@ -304,7 +248,7 @@ describe('Recordatorios', () => {
 
 describe('Tasas de conversión', () => {
   it('muestra compra y venta del Dólar Blue con la fuente', async () => {
-    const user = userEvent.setup()
+    const user = setupUser()
     await firstRun(user)
     expect(await screen.findByText('Dólar Blue / ARS')).toBeInTheDocument()
     expect(await screen.findByTestId('rate-buy')).toHaveTextContent('$ 1.385')
@@ -313,11 +257,11 @@ describe('Tasas de conversión', () => {
   })
 
   it('si la fuente no responde muestra indisponibilidad y el resto sigue funcionando', async () => {
-    const user = userEvent.setup()
+    const user = setupUser()
     await firstRun(user, createTestServices({ rates: fakeRates('unavailable') }))
     expect(await screen.findByText(/cotización no está disponible/)).toBeInTheDocument()
     expect(screen.queryByTestId('rate-buy')).not.toBeInTheDocument()
-    await addMovement(user, 'Ingreso', { amount: '100', description: 'Igual funciona', category: 'Cobro' })
+    await addMovement(user, 'Ingreso', { category: 'Préstamos', amount: '100', concept: 'Igual funciona' })
     expect(await screen.findByText('Igual funciona')).toBeInTheDocument()
     expect(balance()).toBe('$ 100,00')
   })
@@ -325,7 +269,7 @@ describe('Tasas de conversión', () => {
 
 describe('Navegación', () => {
   it('cambia entre Inicio, Movimientos y Más', async () => {
-    const user = userEvent.setup()
+    const user = setupUser()
     await firstRun(user)
     const nav = screen.getByRole('navigation', { name: 'Navegación principal' })
     expect(within(nav).getAllByRole('button').map((b) => b.getAttribute('aria-label') ?? b.textContent)).toEqual([
@@ -343,14 +287,14 @@ describe('Navegación', () => {
     expect(screen.getByRole('heading', { name: 'Más' })).toBeInTheDocument()
 
     await user.click(within(nav).getByRole('button', { name: 'Inicio' }))
-    expect(screen.getByText('Saldo disponible')).toBeInTheDocument()
+    expect(screen.getByTestId('balance')).toBeInTheDocument()
   })
 
   it('la lista de Movimientos muestra todos, agrupados por día', async () => {
-    const user = userEvent.setup()
+    const user = setupUser()
     await firstRun(user)
     for (const n of ['1', '2', '3', '4', '5']) {
-      await addMovement(user, 'Gasto', { amount: n, description: `Gasto ${n}`, category: 'Comida', date: `2026-10-0${n}`, time: '10:00' })
+      await addMovement(user, 'Gasto', { category: 'Salidas y ocio', amount: n, concept: `Gasto ${n}`, date: `2026-10-0${n}` })
     }
     await user.click(screen.getByRole('button', { name: 'Movimientos' }))
     expect(await screen.findAllByText(/^Gasto \d$/)).toHaveLength(5)

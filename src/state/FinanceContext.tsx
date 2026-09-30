@@ -14,6 +14,7 @@ import {
   validateNewTransaction,
   type Account,
   type Category,
+  type CurrencyCode,
   type MinorUnits,
   type NewReminderInput,
   type NewTransactionInput,
@@ -41,7 +42,10 @@ interface FinanceContextValue {
   transactions: Transaction[]
   /** Todos los movimientos, más recientes primero (incluye programados/anulados). */
   history: Transaction[]
+  /** Saldo en pesos (moneda del Home). */
   balance: MinorUnits
+  /** Saldo derivado en la moneda pedida. */
+  balanceOf(currency: CurrencyCode): MinorUnits
   latest: Transaction[]
   reminders: Reminder[]
   today: string
@@ -186,7 +190,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       categories,
       transactions,
       history: sortByRecency(transactions),
-      balance: computeBalance(transactions),
+      balance: computeBalance(transactions, undefined, 'ARS'),
+      balanceOf: (currency: CurrencyCode) => computeBalance(transactions, undefined, currency),
       latest: latestTransactions(transactions, LATEST_TRANSACTIONS_LIMIT),
       reminders: activeReminders(reminders),
       today,

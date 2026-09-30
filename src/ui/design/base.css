@@ -54,6 +54,25 @@
   font-size: var(--text-money-cents);
   letter-spacing: -0.02em;
 }
+/* Monto de las pantallas de registro (se achica según la cantidad de caracteres). */
+@utility type-amount {
+  font-size: var(--text-amount);
+  line-height: 1;
+  letter-spacing: var(--tracking-amount);
+  font-weight: var(--font-weight-medium);
+}
+@utility type-amount-md {
+  font-size: var(--text-amount-md);
+  line-height: 1;
+  letter-spacing: var(--tracking-amount);
+  font-weight: var(--font-weight-medium);
+}
+@utility type-amount-sm {
+  font-size: var(--text-amount-sm);
+  line-height: 1;
+  letter-spacing: var(--tracking-amount);
+  font-weight: var(--font-weight-medium);
+}
 @utility type-display {
   font-size: var(--text-display);
   line-height: var(--text-display--line-height);

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { formatMoney, type MinorUnits } from '@/domain'
 import { cx } from '../cx'
 import { IconButton } from './Button'
-import { FlagAR } from './FlagAR'
+import { FlagAR } from './Flags'
 import { Icon } from './Icon'
 import { Skeleton } from './Card'
 

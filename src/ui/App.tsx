@@ -8,7 +8,8 @@ import { Wordmark } from './components/Brand'
 import { Button } from './components/Button'
 import { Card } from './components/Card'
 import { ReminderSheet } from './components/ReminderSheet'
-import { TransactionSheet } from './components/TransactionSheet'
+import { MovementFlow } from './flow/MovementFlow'
+import { TypeChooserSheet } from './flow/TypeChooserSheet'
 import { DashboardScreen } from './screens/DashboardScreen'
 import { LoginScreen } from './screens/LoginScreen'
 import { MoreScreen } from './screens/MoreScreen'
@@ -39,15 +40,9 @@ function Shell() {
   const { persistent } = useServices()
   const { status, errorMessage, reload } = useFinance()
   const [tab, setTab] = useState<Tab>('home')
-  const [transactionType, setTransactionType] = useState<TransactionType | null>(null)
+  const [flowType, setFlowType] = useState<TransactionType | null>(null)
+  const [chooserOpen, setChooserOpen] = useState(false)
   const [reminderOpen, setReminderOpen] = useState(false)
-  // Conserva el último tipo mientras la hoja se cierra, para evitar un salto visual.
-  const [lastType, setLastType] = useState<TransactionType>('EXPENSE')
-
-  const openTransaction = (type: TransactionType) => {
-    setLastType(type)
-    setTransactionType(type)
-  }
 
   return (
     <div className="mx-auto min-h-dvh w-full max-w-md bg-canvas pb-28 sm:border-x sm:border-line">
@@ -65,7 +60,7 @@ function Shell() {
         </Card>
       ) : tab === 'home' ? (
         <DashboardScreen
-          onNewTransaction={openTransaction}
+          onNewTransaction={setFlowType}
           onNewReminder={() => setReminderOpen(true)}
           onSeeAll={() => setTab('movements')}
         />
@@ -75,12 +70,16 @@ function Shell() {
         <MoreScreen />
       )}
 
-      <BottomNav active={tab} onSelect={setTab} onAdd={() => openTransaction(lastType)} />
-      <TransactionSheet
-        open={transactionType !== null}
-        initialType={transactionType ?? lastType}
-        onClose={() => setTransactionType(null)}
+      <BottomNav active={tab} onSelect={setTab} onAdd={() => setChooserOpen(true)} />
+      <TypeChooserSheet
+        open={chooserOpen}
+        onClose={() => setChooserOpen(false)}
+        onSelect={(type) => {
+          setChooserOpen(false)
+          setFlowType(type)
+        }}
       />
+      {flowType ? <MovementFlow type={flowType} onClose={() => setFlowType(null)} /> : null}
       <ReminderSheet open={reminderOpen} onClose={() => setReminderOpen(false)} />
     </div>
   )

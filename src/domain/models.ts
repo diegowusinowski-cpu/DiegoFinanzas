@@ -19,7 +19,17 @@ export type LocalTime = string
 /** Entero en centavos. Siempre >= 0. */
 export type MinorUnits = number
 
-export type CurrencyCode = 'ARS'
+export type CurrencyCode = 'ARS' | 'USD'
+
+export const COUNTRIES = ['AR', 'US'] as const
+export type Country = (typeof COUNTRIES)[number]
+
+/** Titular del movimiento (por ahora solo personas). */
+export type AccountHolder = 'INDIVIDUAL'
+
+/** Tipo de operación. */
+export const PAYMENT_METHODS = ['CASH', 'TRANSFER'] as const
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number]
 
 export const TRANSACTION_TYPES = ['INCOME', 'EXPENSE'] as const
 export type TransactionType = (typeof TRANSACTION_TYPES)[number]
@@ -42,6 +52,8 @@ export interface Category {
   type: TransactionType
   /** Categoría del sistema: no editable por el usuario. */
   system: boolean
+  /** Ya no se ofrece al registrar, pero los movimientos viejos siguen mostrando su nombre. */
+  retired?: boolean
 }
 
 export interface Transaction {
@@ -52,6 +64,11 @@ export interface Transaction {
   amount: MinorUnits
   description: string
   categoryId: EntityId
+  country: Country
+  currency: CurrencyCode
+  holder: AccountHolder
+  /** `null` en movimientos anteriores al flujo de registro completo. */
+  paymentMethod: PaymentMethod | null
   date: LocalDate
   time: LocalTime
   status: TransactionStatus

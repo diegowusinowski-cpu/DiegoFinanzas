@@ -1,11 +1,15 @@
 import { dateTimeKey, isValidLocalDate, isValidLocalTime, localDateTimeToDate, toIso } from './datetime'
 import { MAX_MINOR_UNITS } from './money'
 import type {
+  AccountHolder,
   Category,
+  Country,
+  CurrencyCode,
   EntityId,
   LocalDate,
   LocalTime,
   MinorUnits,
+  PaymentMethod,
   Transaction,
   TransactionStatus,
   TransactionType,
@@ -22,6 +26,11 @@ export interface NewTransactionInput {
   categoryId: EntityId
   date: LocalDate
   time: LocalTime
+  /** Por defecto Argentina / ARS / Individual. */
+  country?: Country
+  currency?: CurrencyCode
+  holder?: AccountHolder
+  paymentMethod?: PaymentMethod | null
 }
 
 export type TransactionField = 'amount' | 'description' | 'categoryId' | 'date' | 'time' | 'type'
@@ -69,6 +78,11 @@ export function initialStatus(date: LocalDate, time: LocalTime, now: Date): Tran
   return localDateTimeToDate(date, time).getTime() > now.getTime() ? 'SCHEDULED' : 'COMPLETED'
 }
 
+/** Moneda en la que opera cada país. */
+export function currencyForCountry(country: Country): CurrencyCode {
+  return country === 'US' ? 'USD' : 'ARS'
+}
+
 export function buildTransaction(
   input: NewTransactionInput,
   meta: { id: EntityId; now: Date },
@@ -81,6 +95,10 @@ export function buildTransaction(
     amount: input.amount,
     description: input.description.trim(),
     categoryId: input.categoryId,
+    country: input.country ?? 'AR',
+    currency: input.currency ?? currencyForCountry(input.country ?? 'AR'),
+    holder: input.holder ?? 'INDIVIDUAL',
+    paymentMethod: input.paymentMethod ?? null,
     date: input.date,
     time: input.time,
     status: initialStatus(input.date, input.time, meta.now),

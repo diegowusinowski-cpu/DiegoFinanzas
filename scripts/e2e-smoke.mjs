@@ -15,16 +15,23 @@ async function pin(page, digits) {
   for (const d of digits) await page.getByRole('button', { name: d, exact: true }).click()
 }
 
-async function addMovement(page, kind, { amount, description, category, date, time }) {
+/** Flujo completo: país → Individual → tipo → monto → confirmar → confirmación → Home. */
+async function addMovement(page, kind, { amount, concept, category, date, method }) {
   await page.getByRole('button', { name: kind, exact: true }).click()
-  const dialog = page.getByRole('dialog', { name: 'Nuevo movimiento' })
-  await dialog.getByLabel('Monto').fill(amount)
-  await dialog.getByLabel('Descripción').fill(description)
-  await dialog.getByText(category, { exact: true }).click()
-  if (date) await dialog.getByLabel('Fecha').fill(date)
-  if (time) await dialog.getByLabel('Hora').fill(time)
-  await dialog.getByRole('button', { name: /Registrar/ }).click()
-  await dialog.waitFor({ state: 'hidden' })
+  await page.getByRole('button', { name: /^Argentina/ }).click()
+  await page.getByRole('button', { name: /^Individual/ }).click()
+  await page.getByRole('button', { name: new RegExp(`^${category}`) }).click()
+  for (const ch of amount) await page.getByRole('button', { name: ch === ',' ? 'Coma decimal' : ch, exact: true }).click()
+  if (concept) await page.getByLabel('Concepto').fill(concept)
+  await page.getByRole('button', { name: 'Continuar' }).click()
+  if (method) await page.getByRole('radio', { name: method }).click()
+  if (date) await page.getByLabel('Fecha').fill(date)
+  await page.getByRole('button', { name: kind === 'Ingreso' ? 'Confirmar ingreso' : 'Confirmar gasto' }).click()
+  const done = page.getByTestId('movement-done')
+  await done.waitFor()
+  await page.getByTestId('done-check').waitFor()
+  await done.waitFor({ state: 'detached', timeout: 6000 })
+  await page.getByTestId('balance').waitFor()
 }
 
 async function run(name, device, { mockRate } = {}) {
@@ -64,19 +71,19 @@ async function run(name, device, { mockRate } = {}) {
   assert.equal(await page.getByTestId('balance').textContent(), '$ 0,00')
   await page.screenshot({ path: `${OUT}/${name}-1-dashboard-vacio.png`, fullPage: true })
 
-  await addMovement(page, 'Ingreso', { amount: '10.000', description: 'Sueldo octubre', category: 'Sueldo' })
+  await addMovement(page, 'Ingreso', { amount: '10000', concept: 'Sueldo octubre', category: 'Trabajo en relación de dependencia' })
   await page.getByText('Sueldo octubre').waitFor()
   assert.equal(await page.getByTestId('balance').textContent(), '$ 10.000,00')
   log(`[${name}] ingreso suma al saldo: $ 10.000,00`)
 
-  await addMovement(page, 'Gasto', { amount: '2500,50', description: 'Supermercado', category: 'Comida' })
+  await addMovement(page, 'Gasto', { amount: '2500,5', concept: 'Supermercado', category: 'Transporte y movilidad', method: 'Efectivo' })
   await page.getByText('Supermercado').waitFor()
   assert.equal(await page.getByTestId('balance').textContent(), '$ 7.499,50')
   log(`[${name}] gasto resta del saldo: $ 7.499,50`)
 
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' })
-  await addMovement(page, 'Gasto', { amount: '100', description: 'Mov B', category: 'Comida', date: '2020-01-02', time: '10:00' })
-  await addMovement(page, 'Gasto', { amount: '200', description: 'Mov A', category: 'Comida', date: '2020-01-01', time: '10:00' })
+  await addMovement(page, 'Gasto', { amount: '100', concept: 'Mov B', category: 'Salidas y ocio', date: '2020-01-02' })
+  await addMovement(page, 'Gasto', { amount: '200', concept: 'Mov A', category: 'Salidas y ocio', date: '2020-01-01' })
   const items = page.getByTestId('latest-movements').getByRole('listitem')
   assert.equal(await items.count(), 3)
   const texts = await items.allTextContents()

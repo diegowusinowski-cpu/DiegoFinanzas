@@ -53,3 +53,10 @@ describe('formato de montos', () => {
     expect(formatSignedMoney(1000, 'negative')).toBe('− $ 10,00')
   })
 })
+
+describe('formatMoney por moneda', () => {
+  it('USD lleva su propio prefijo', () => {
+    expect(formatMoney(123456, 'USD')).toBe('US$ 1.234,56')
+    expect(formatMoney(123456)).toBe('$ 1.234,56')
+  })
+})

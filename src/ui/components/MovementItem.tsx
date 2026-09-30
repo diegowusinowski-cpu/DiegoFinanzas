@@ -46,9 +46,9 @@ export function MovementItem({ transaction, category, today }: MovementItemProps
           'type-number type-subheading shrink-0 text-right',
           cancelled ? 'text-fg-muted line-through' : income ? 'text-positive' : 'text-fg',
         )}
-        aria-label={`${typeLabel} de ${formatMoney(transaction.amount)}`}
+        aria-label={`${typeLabel} de ${formatMoney(transaction.amount, transaction.currency)}`}
       >
-        {sign} {formatMoney(transaction.amount)}
+        {sign} {formatMoney(transaction.amount, transaction.currency)}
       </p>
     </li>
   )

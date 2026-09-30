@@ -94,6 +94,11 @@
   --tracking-money: -0.03em;
   --text-money-cents: 1.7rem; /* ≈ 62 % de la cifra, como ARQ */
   --text-money-sm: 2.125rem; /* montos muy largos */
+  /* amount: monto protagonista de las pantallas de registro */
+  --text-amount: 3.75rem;
+  --text-amount-md: 3rem;
+  --text-amount-sm: 2.25rem;
+  --tracking-amount: -0.03em;
   /* display: título de pantalla */
   --text-display: 1.75rem;
   --text-display--line-height: 1.1;
@@ -172,6 +177,10 @@
   --animate-rise: rise 0.6s var(--ease-reveal) both;
   --animate-sheet: sheet var(--duration-slow) cubic-bezier(0.22, 1, 0.36, 1) both;
   --animate-fade: fade 0.25s ease-out both;
+  --animate-step: step-in 0.32s var(--ease-standard) backwards;
+  --animate-cover: cover 0.65s cubic-bezier(0.32, 0.72, 0, 1) both;
+  --animate-pop: pop 0.4s cubic-bezier(0.34, 1.4, 0.64, 1) 0.35s both;
+  --animate-draw: draw 0.4s var(--ease-standard) 0.65s both;
   --animate-shake: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 
   @keyframes rise {
@@ -181,6 +190,22 @@
   @keyframes sheet {
     from { transform: translateY(100%); }
     to { transform: translateY(0); }
+  }
+  @keyframes step-in {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes cover {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  @keyframes pop {
+    from { opacity: 0; transform: scale(0.6); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes draw {
+    from { stroke-dashoffset: 1; }
+    to { stroke-dashoffset: 0; }
   }
   @keyframes fade {
     from { opacity: 0; }
