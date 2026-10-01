@@ -89,7 +89,10 @@ async function run(name, device, { mockRate } = {}) {
   // Luca: aparece junto al saludo, con su imagen cargada, y no tapa los botones.
   const luca = page.getByRole('img', { name: 'Luca, tu compañera de DWF' })
   await luca.waitFor()
-  assert.equal(await luca.getAttribute('data-luca'), 'default')
+  // Al abrir el Inicio saluda (guiño) y enseguida queda en su estado normal.
+  assert.equal(await luca.getAttribute('data-luca'), 'waving')
+  await page.waitForFunction(() => document.querySelector('[data-luca][aria-label]')?.getAttribute('data-luca') === 'idle', null, { timeout: 5000 })
+  await page.waitForFunction(() => !document.querySelector('[data-luca] .luca-fade-out'), null, { timeout: 5000 }) // terminó el fundido
   assert.ok(await luca.locator('img').evaluate((img) => img.complete && img.naturalWidth > 0), 'la imagen de Luca debe cargar')
   for (const label of ['Ingreso', 'Gasto']) {
     const box = await page.getByRole('button', { name: label }).boundingBox()
@@ -322,6 +325,16 @@ async function run(name, device, { mockRate } = {}) {
     await page.waitForTimeout(250)
     const w = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
     assert.equal(w, 0, `sin scroll horizontal en ${tab}`)
+    // Todas las Lucas visibles quedan dentro de la pantalla y no capturan toques.
+    const stray = await page.evaluate(() =>
+      [...document.querySelectorAll('[data-luca]')].flatMap((el) => {
+        const r = el.getBoundingClientRect()
+        const bad = r.width > 0 && (r.left < -1 || r.right > document.documentElement.clientWidth + 1)
+        const blocks = getComputedStyle(el).pointerEvents !== 'none'
+        return bad || blocks ? [`${el.getAttribute('data-luca')}:${Math.round(r.left)}-${Math.round(r.right)}`] : []
+      }),
+    )
+    assert.deepEqual(stray, [], `Luca fuera de pantalla o interceptando toques en ${tab}`)
   }
   log(`[${name}] sin scroll horizontal recorriendo Movimientos / Préstamos / Ahorros / Inicio`)
   assert.deepEqual(errors, [], `errores de consola: ${errors.join(' | ')}`)
@@ -341,7 +354,8 @@ async function runReducedMotion() {
   assert.equal(await welcome.getAttribute('data-motion'), 'reduced')
   const animationName = await welcome.evaluate((el) => getComputedStyle(el).animationName)
   assert.equal(animationName, 'none', 'Luca no debe animarse con movimiento reducido')
-  log('[movimiento-reducido] Luca queda quieta en el login')
+  log('[movimiento-reducido] Luca queda quieta en el login (imagen entera, sin partes móviles)')
+  assert.equal(await page.locator('[data-luca-part]').count(), 0)
   await context.close()
 }
 
@@ -349,6 +363,7 @@ try {
   await run('android-360', { ...devices['Pixel 5'], viewport: { width: 360, height: 780 } })
   await run('iphone-390', { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }, { mockRate: true })
   await run('iphone-375', { ...devices['iPhone X'], viewport: { width: 375, height: 812 } }, { mockRate: true })
+  await run('tablet', { ...devices['iPad (gen 7)'], viewport: { width: 768, height: 1024 } }, { mockRate: true })
   await run('escritorio', { viewport: { width: 1280, height: 800 } }, { mockRate: true })
   await runReducedMotion()
   console.log('\nE2E OK')

@@ -589,6 +589,23 @@ describe('Cobro de cuotas', () => {
     expect(balance()).toBe('$ 417.000,00')
   })
 
+  it('Luca: atenta con cuotas pendientes y contenta al cobrar una cuota', async () => {
+    const { user } = await setup()
+    await openLoans(user)
+    await createLoan(user)
+    // Préstamo nuevo: Luca con el comprobante.
+    const receipt = screen.getByRole('dialog', { name: 'Comprobante de préstamo' })
+    expect(receipt.querySelector('[data-luca]')).toHaveAttribute('data-luca', 'lending')
+    await user.click(screen.getByRole('button', { name: 'Listo' }))
+    const dialog = await openDetail(user)
+    expect(dialog.querySelector('[data-luca]')).toHaveAttribute('data-luca', 'attentive')
+
+    await user.click(within(dialog).getByRole('button', { name: 'Marcar cuota 1 como pagada' }))
+    const sheet = within(await screen.findByRole('dialog', { name: 'Cobrar cuota' }))
+    await user.click(sheet.getByRole('button', { name: 'Confirmar cobro' }))
+    await waitFor(() => expect(dialog.querySelector('[data-luca]')).toHaveAttribute('data-luca', 'excited'))
+  })
+
   it('cancelar la confirmación no cobra nada', async () => {
     const { user, services } = await setup()
     await openLoans(user)

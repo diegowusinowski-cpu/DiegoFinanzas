@@ -134,13 +134,8 @@ export function LoanDetail({ loan, installments, onOpenReceipt, onClose }: LoanD
               <h2 id="installments-title" className="type-title">
                 Cuotas
               </h2>
-              {/* Pensativa con cuotas pendientes; contenta si el préstamo está completo o recién se cobró una cuota. */}
-              <LucaMascot
-                key={justPaid ? 'paid' : 'idle'}
-                state={justPaid ? 'happy' : loanLuca(view)}
-                size="sm"
-                animation={justPaid ? 'celebrate' : 'enter'}
-              />
+              {/* Atenta con cuotas pendientes; contenta si el préstamo está completo o recién se cobró una cuota. */}
+              <LucaMascot variant={justPaid ? 'excited' : loanLuca(view)} size="sm" />
             </div>
             <ul>
               {installmentViews(installments, today).map(({ installment, view: installmentView }) => {

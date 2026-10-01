@@ -47,11 +47,7 @@ export function JarDetail({ jar, onClose }: { jar: SavingsJar; onClose(): void }
             </div>
             <div className="flex shrink-0 items-center gap-2">
               {/* Meta cumplida: Luca celebra con el trofeo; antes, acompaña con la alcancía. */}
-              <LucaMascot
-                state={jarLuca(summary.completed)}
-                size="sm"
-                animation={summary.completed ? 'celebrate' : 'enter'}
-              />
+              <LucaMascot variant={jarLuca(summary.completed)} size={summary.completed ? 'md' : 'sm'} />
             <IconButton variant="secondary" size="md" onClick={onClose} aria-label="Cerrar detalle">
               <Icon name="close" />
             </IconButton>

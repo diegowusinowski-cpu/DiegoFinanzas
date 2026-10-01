@@ -99,7 +99,7 @@ export function MovementsScreen({ onBack }: { onBack(): void }) {
             ))}
           </div>
         ) : history.length === 0 ? (
-          <LucaEmptyState state="sleeping" title="Todavía no hay movimientos">
+          <LucaEmptyState variant="sleeping" title="Todavía no hay movimientos">
             Tus ingresos y gastos se van a listar acá, del más reciente al más antiguo.
           </LucaEmptyState>
         ) : groups.length === 0 ? (

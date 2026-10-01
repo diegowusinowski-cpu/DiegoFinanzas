@@ -62,9 +62,8 @@ export function AmountStep(props: AmountStepProps) {
       <section className="relative flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-gutter text-center">
         {/* Acompaña sin tapar: en pantallas bajas no se muestra. */}
         <LucaMascot
-          state={flowLuca(type)}
+          variant={flowLuca(type, 'amount')}
           size="sm"
-          animation="enter"
           className="pointer-events-none absolute top-1 right-gutter [@media(max-height:700px)]:hidden"
         />
         <AmountDisplay text={text} currency={currency} empty={!canContinue && amountRaw.replace(/[0,]/g, '') === ''} />

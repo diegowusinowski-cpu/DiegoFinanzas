@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '@/state/AuthContext'
 import { useFinance } from '@/state/FinanceContext'
 import { latestServices, type TransactionType } from '@/domain'
@@ -12,7 +12,7 @@ import { UsdBalanceSheet } from '../components/UsdBalanceSheet'
 import { ReminderCard } from '../components/ReminderCards'
 import { SectionAction, SectionHeader } from '../components/SectionHeader'
 import { ServiceItem } from '../components/ServiceItem'
-import { LucaMascot, homeLuca, remindersLuca } from '../luca'
+import { LucaMascot, homeLuca, preloadLuca, remindersLuca, useLucaGreeting } from '../luca'
 import { useUsdBlueRate } from '../hooks/useExchangeRate'
 
 const LATEST_SERVICES_LIMIT = 4
@@ -30,6 +30,9 @@ export function DashboardScreen({ onNewTransaction, onNewReminder, onSeeAll }: D
   const loading = finance.status === 'loading'
   const [usdOpen, setUsdOpen] = useState(false)
   const reminderLuca = remindersLuca(finance.reminders.length)
+  const greeting = useLucaGreeting()
+  // Con calma, y sin bloquear nada: las poses que Luca va a necesitar enseguida.
+  useEffect(() => preloadLuca(['happy', 'thinking', 'celebrating', 'success', 'spending', 'attentive']), [])
   const services = latestServices(finance.transactions, finance.categories, LATEST_SERVICES_LIMIT)
 
   return (
@@ -42,11 +45,10 @@ export function DashboardScreen({ onNewTransaction, onNewReminder, onSeeAll }: D
           <div className="flex items-center gap-2">
             {/* Luca junto al saludo, sobre un fondo claro para que resalte en el verde. Cambia de gesto según la cuenta. */}
             <LucaMascot
-              state={loading ? 'default' : homeLuca(finance.balance)}
+              variant={greeting ? 'waving' : loading ? 'walking' : homeLuca(finance.balance)}
               size="sm"
               chip
               priority
-              animation="enter"
               label="Luca, tu compañera de DWF"
             />
             {profile ? (
@@ -88,7 +90,7 @@ export function DashboardScreen({ onNewTransaction, onNewReminder, onSeeAll }: D
             title="Recordatorios"
             action={
               <span className="flex items-center gap-1">
-                {reminderLuca ? <LucaMascot state={reminderLuca} size="xs" animation="enter" /> : null}
+                <LucaMascot variant={reminderLuca ?? 'attentive'} size="xs" show={reminderLuca !== null} />
                 <SectionAction onClick={onNewReminder}>+ Agregar</SectionAction>
               </span>
             }

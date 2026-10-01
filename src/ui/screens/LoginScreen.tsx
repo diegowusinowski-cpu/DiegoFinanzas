@@ -37,9 +37,8 @@ export function LoginScreen() {
       <header className="flex flex-col items-center gap-2 pt-6">
         {/* Luca saluda desde la primera pantalla; en pantallas bajas (o con el teclado abierto) se oculta para no tapar nada. */}
         <LucaMascot
-          state="welcome"
+          variant="welcome"
           size={104}
-          animation="idle"
           priority
           label="Luca, la mascota de DWF, te saluda"
           className="[@media(max-height:640px)]:hidden"

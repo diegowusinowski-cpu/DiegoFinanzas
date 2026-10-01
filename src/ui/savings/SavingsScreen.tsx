@@ -70,7 +70,7 @@ export function SavingsScreen({ onBack }: { onBack(): void }) {
               <h2 id="jars-title" className="type-title">
                 Mis frascos
               </h2>
-              {!loading && jars.length > 0 ? <LucaMascot state="saving" size="sm" animation="enter" /> : null}
+              {!loading && jars.length > 0 ? <LucaMascot variant="saving" size="sm" /> : null}
             </div>
             {loading ? (
               <div className="flex flex-col gap-3" aria-busy="true" aria-label="Cargando frascos">
@@ -79,7 +79,7 @@ export function SavingsScreen({ onBack }: { onBack(): void }) {
                 ))}
               </div>
             ) : jars.length === 0 ? (
-              <LucaEmptyState state="saving" title="Todavía no hay frascos">
+              <LucaEmptyState variant="saving" title="Todavía no hay frascos">
                 Creá uno para separar dinero hacia un objetivo.
               </LucaEmptyState>
             ) : (

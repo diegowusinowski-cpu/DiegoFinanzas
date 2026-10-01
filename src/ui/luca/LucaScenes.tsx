@@ -1,22 +1,22 @@
 import { cx } from '../cx'
 import { LucaMascot, type LucaSize } from './LucaMascot'
-import type { LucaState } from './poses'
+import type { LucaState } from './states'
 
 /** Estado vacío con Luca: la pose arriba y el mismo texto de siempre debajo. */
 export function LucaEmptyState({
-  state,
+  variant,
   title,
   children,
   size = 'lg',
 }: {
-  state: LucaState
+  variant: LucaState
   title: string
   children?: string
   size?: LucaSize | number
 }) {
   return (
     <div className="flex flex-col items-center gap-2 py-4 text-center">
-      <LucaMascot state={state} size={size} animation="idle" />
+      <LucaMascot variant={variant} size={size} animation="settle" />
       <p className="type-subheading text-fg">{title}</p>
       {children ? <p className="max-w-[18rem] text-body-sm text-fg-soft">{children}</p> : null}
     </div>
@@ -30,7 +30,7 @@ export function LucaEmptyState({
 export function LucaLoader({ label, className, size = 'lg' }: { label: string; className?: string; size?: LucaSize | number }) {
   return (
     <div role="status" aria-busy="true" aria-label={label} className={cx('flex flex-col items-center gap-2', className)}>
-      <LucaMascot state="loading" size={size} animation="walk" />
+      <LucaMascot variant="loading" size={size} />
       <p aria-hidden="true" className="text-body-sm text-fg-soft">
         {label}
       </p>

@@ -81,7 +81,7 @@ export function LoansScreen({ onBack }: { onBack(): void }) {
               <h2 id="my-loans-title" className="type-title">
                 Mis préstamos
               </h2>
-              {!loading && loans.length > 0 ? <LucaMascot state="lending" size="sm" animation="enter" /> : null}
+              {!loading && loans.length > 0 ? <LucaMascot variant="lending" size="sm" /> : null}
             </div>
             {loading ? (
               <div className="flex flex-col gap-3" aria-busy="true" aria-label="Cargando préstamos">
@@ -90,7 +90,7 @@ export function LoansScreen({ onBack }: { onBack(): void }) {
                 ))}
               </div>
             ) : loans.length === 0 ? (
-              <LucaEmptyState state="lending" title="Todavía no hay préstamos">
+              <LucaEmptyState variant="lending" title="Todavía no hay préstamos">
                 Cuando crees uno, vas a verlo acá con sus cuotas.
               </LucaEmptyState>
             ) : (
