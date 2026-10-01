@@ -157,3 +157,42 @@ export interface LoanInstallment {
   /** Movimiento INGRESO del cobro de la cuota (se completará al implementar los cobros). */
   paymentTransactionId: EntityId | null
 }
+
+/* ── Ahorros (frascos) ──────────────────────────────────────────────────── */
+
+export const SAVINGS_FREQUENCIES = ['WEEKLY', 'BIWEEKLY', 'MONTHLY'] as const
+export type SavingsFrequency = (typeof SAVINGS_FREQUENCIES)[number]
+
+/** Plan de ahorro de un frasco: cada cuánto y cuánto se quiere aportar. */
+export interface SavingsPlan {
+  frequency: SavingsFrequency
+  /** Aporte por período. */
+  amount: MinorUnits
+}
+
+/**
+ * Frasco: una reserva interna de dinero para un objetivo. NO guarda el monto ahorrado: ese valor se
+ * deriva de sus aportes, así no puede quedar desincronizado ni duplicarse.
+ */
+export interface SavingsJar {
+  id: EntityId
+  name: string
+  targetAmount: MinorUnits
+  /** Fecha objetivo opcional. */
+  targetDate: LocalDate | null
+  plan: SavingsPlan
+  createdAt: IsoTimestamp
+  updatedAt: IsoTimestamp
+}
+
+/**
+ * Aporte a un frasco. Es una asignación interna: no es un movimiento (no es gasto ni ingreso) y no
+ * cambia el saldo de la cuenta. Los aportes se conservan siempre (no se editan ni se eliminan).
+ */
+export interface SavingsContribution {
+  id: EntityId
+  jarId: EntityId
+  amount: MinorUnits
+  date: LocalDate
+  createdAt: IsoTimestamp
+}

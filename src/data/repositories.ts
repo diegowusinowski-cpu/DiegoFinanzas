@@ -1,4 +1,15 @@
-import type { Account, Category, InstallmentPayment, Loan, LoanBundle, LoanInstallment, Reminder, Transaction } from '@/domain'
+import type {
+  Account,
+  Category,
+  InstallmentPayment,
+  Loan,
+  LoanBundle,
+  LoanInstallment,
+  Reminder,
+  SavingsContribution,
+  SavingsJar,
+  Transaction,
+} from '@/domain'
 
 /**
  * Contratos de persistencia. Son asíncronos a propósito: hoy los respalda
@@ -43,10 +54,22 @@ export interface LoanRepository {
   recordPayment(payment: InstallmentPayment): Promise<void>
 }
 
+/**
+ * Frascos de ahorro y sus aportes. Los aportes solo se agregan: no hay `update` ni `delete`, y no
+ * tocan los movimientos (ahorrar es una reserva interna, no un gasto).
+ */
+export interface SavingsRepository {
+  listJars(): Promise<SavingsJar[]>
+  listContributions(): Promise<SavingsContribution[]>
+  createJar(jar: SavingsJar): Promise<void>
+  addContribution(contribution: SavingsContribution): Promise<void>
+}
+
 export interface Repositories {
   transactions: TransactionRepository
   accounts: AccountRepository
   categories: CategoryRepository
   reminders: ReminderRepository
   loans: LoanRepository
+  savings: SavingsRepository
 }

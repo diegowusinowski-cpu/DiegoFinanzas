@@ -31,7 +31,7 @@ export function SummaryLine({ label, value, strong = false }: { label: string; v
   )
 }
 
-export function DecorativeIcon({ name }: { name: 'loan' | 'calculator' | 'calendar' | 'user' }) {
+export function DecorativeIcon({ name }: { name: 'loan' | 'jar' | 'calculator' | 'calendar' | 'user' }) {
   return (
     <span className="grid size-control-md place-items-center rounded-pill bg-sunken text-fg">
       <Icon name={name} />

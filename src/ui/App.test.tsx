@@ -269,7 +269,7 @@ describe('Tasas de conversión', () => {
 })
 
 describe('Navegación', () => {
-  it('cambia entre Inicio, Movimientos, Préstamos y Más', async () => {
+  it('cambia entre Inicio, Movimientos, Préstamos, Ahorros y Más', async () => {
     const user = setupUser()
     await firstRun(user)
     const nav = screen.getByRole('navigation', { name: 'Navegación principal' })
@@ -278,6 +278,7 @@ describe('Navegación', () => {
       'Movimientos',
       'Registrar movimiento',
       'Préstamos',
+      'Ahorros',
       'Más',
     ])
 
@@ -291,6 +292,12 @@ describe('Navegación', () => {
     expect(within(nav).getByRole('button', { name: 'Movimientos' })).not.toHaveAttribute('aria-current')
     expect(screen.getByRole('button', { name: /^Nuevo préstamo/ })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^Calculadora financiera/ })).toBeInTheDocument()
+
+    await user.click(within(nav).getByRole('button', { name: 'Ahorros' }))
+    expect(await screen.findByRole('heading', { name: 'Ahorros', level: 1 })).toBeInTheDocument()
+    expect(within(nav).getByRole('button', { name: 'Ahorros' })).toHaveAttribute('aria-current', 'page')
+    expect(within(nav).getByRole('button', { name: 'Préstamos' })).not.toHaveAttribute('aria-current')
+    expect(screen.getByRole('button', { name: /^Nuevo frasco/ })).toBeInTheDocument()
 
     await user.click(within(nav).getByRole('button', { name: 'Más' }))
     expect(screen.getByRole('heading', { name: 'Más' })).toBeInTheDocument()

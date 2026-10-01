@@ -1,5 +1,5 @@
 import { DEFAULT_CATEGORIES, toIso } from '@/domain'
-import type { Account, Category, InstallmentPayment, Loan, LoanBundle, LoanInstallment, Reminder, Transaction } from '@/domain'
+import type { Account, Category, InstallmentPayment, Loan, SavingsContribution, SavingsJar, LoanBundle, LoanInstallment, Reminder, Transaction } from '@/domain'
 import { LocalCollection } from './localCollection'
 import type {
   AccountRepository,
@@ -7,6 +7,7 @@ import type {
   LoanRepository,
   ReminderRepository,
   Repositories,
+  SavingsRepository,
   TransactionRepository,
 } from './repositories'
 import type { KeyValueStorage } from './storage'
@@ -18,6 +19,8 @@ export const STORAGE_KEYS = {
   reminders: 'dwf.v1.reminders',
   loans: 'dwf.v1.loans',
   installments: 'dwf.v1.loan-installments',
+  savingsJars: 'dwf.v1.savings-jars',
+  savingsContributions: 'dwf.v1.savings-contributions',
 } as const
 
 export const DEFAULT_ACCOUNT_ID = 'acc-main'
@@ -157,6 +160,27 @@ class LocalLoanRepository implements LoanRepository {
   }
 }
 
+class LocalSavingsRepository implements SavingsRepository {
+  private readonly jars: LocalCollection<SavingsJar>
+  private readonly contributions: LocalCollection<SavingsContribution>
+  constructor(storage: KeyValueStorage) {
+    this.jars = new LocalCollection(storage, STORAGE_KEYS.savingsJars)
+    this.contributions = new LocalCollection(storage, STORAGE_KEYS.savingsContributions)
+  }
+  async listJars() {
+    return this.jars.read()
+  }
+  async listContributions() {
+    return this.contributions.read()
+  }
+  async createJar(jar: SavingsJar) {
+    this.jars.upsertMany([jar])
+  }
+  async addContribution(contribution: SavingsContribution) {
+    this.contributions.upsertMany([contribution])
+  }
+}
+
 export function createLocalRepositories(storage: KeyValueStorage): Repositories {
   return {
     transactions: new LocalTransactionRepository(storage),
@@ -164,5 +188,6 @@ export function createLocalRepositories(storage: KeyValueStorage): Repositories 
     categories: new LocalCategoryRepository(storage),
     reminders: new LocalReminderRepository(storage),
     loans: new LocalLoanRepository(storage),
+    savings: new LocalSavingsRepository(storage),
   }
 }

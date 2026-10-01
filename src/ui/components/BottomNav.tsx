@@ -1,7 +1,7 @@
 import { cx } from '../cx'
 import { Icon, type IconName } from './Icon'
 
-export type Tab = 'home' | 'movements' | 'loans' | 'more'
+export type Tab = 'home' | 'movements' | 'loans' | 'savings' | 'more'
 
 interface BottomNavProps {
   active: Tab
@@ -13,6 +13,7 @@ const ITEMS: Array<{ tab: Tab; label: string; icon: IconName }> = [
   { tab: 'home', label: 'Inicio', icon: 'home' },
   { tab: 'movements', label: 'Movimientos', icon: 'list' },
   { tab: 'loans', label: 'Préstamos', icon: 'loan' },
+  { tab: 'savings', label: 'Ahorros', icon: 'jar' },
   { tab: 'more', label: 'Más', icon: 'more' },
 ]
 
@@ -48,7 +49,7 @@ export function BottomNav({ active, onSelect, onAdd }: BottomNavProps) {
         className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-canvas via-canvas/80 to-transparent"
       />
       <div className="relative px-4 pb-safe">
-        <div className="grid grid-cols-[1fr_1fr_auto_1fr_1fr] items-center gap-1 rounded-pill border border-line bg-nav p-1 shadow-float backdrop-blur-xl">
+        <div className="grid grid-cols-[1fr_1fr_auto_1fr_1fr_1fr] items-center gap-1 rounded-pill border border-line bg-nav p-1 shadow-float backdrop-blur-xl">
           {item(ITEMS[0]!)}
           {item(ITEMS[1]!)}
           <button
@@ -61,6 +62,7 @@ export function BottomNav({ active, onSelect, onAdd }: BottomNavProps) {
           </button>
           {item(ITEMS[2]!)}
           {item(ITEMS[3]!)}
+          {item(ITEMS[4]!)}
         </div>
       </div>
     </nav>

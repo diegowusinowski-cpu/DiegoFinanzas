@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest'
 import {
   DEFAULT_CATEGORIES,
   buildInstallmentPayment,
+  buildJar,
   buildLoanBundle,
   buildReminder,
   buildTransaction,
   categoriesForType,
   type InstallmentPayment,
+  type SavingsContribution,
 } from '@/domain'
 import { createLocalRepositories, DEFAULT_ACCOUNT_ID, STORAGE_KEYS } from './localRepositories'
 import { MemoryStorage, StorageCorruptedError } from './storage'
@@ -189,5 +191,55 @@ describe('préstamos: persistencia atómica', () => {
 
   it('no expone borrado', () => {
     expect(createLocalRepositories(new MemoryStorage()).loans).not.toHaveProperty('delete')
+  })
+})
+
+describe('ahorros: persistencia', () => {
+  const jar = (id: string) =>
+    buildJar(
+      { name: id, targetAmount: 1_000_000, targetDate: null, plan: { frequency: 'WEEKLY', amount: 50_000 } },
+      { now: NOW, newId: () => id },
+    )
+  const contribution = (id: string, jarId: string, amount: number): SavingsContribution => ({
+    id,
+    jarId,
+    amount,
+    date: '2026-10-06',
+    createdAt: NOW.toISOString(),
+  })
+
+  it('guarda varios frascos y aportes y los recupera entre instancias', async () => {
+    const storage = new MemoryStorage()
+    const repos = createLocalRepositories(storage)
+    await repos.savings.createJar(jar('a'))
+    await repos.savings.createJar(jar('b'))
+    await repos.savings.addContribution(contribution('c1', 'a', 100))
+    await repos.savings.addContribution(contribution('c2', 'a', 200))
+    await repos.savings.addContribution(contribution('c3', 'b', 300))
+    const again = createLocalRepositories(storage)
+    expect((await again.savings.listJars()).map((j) => j.id)).toEqual(['a', 'b'])
+    expect((await again.savings.listContributions()).map((c) => [c.id, c.amount])).toEqual([
+      ['c1', 100],
+      ['c2', 200],
+      ['c3', 300],
+    ])
+  })
+
+  it('agregar aportes no toca movimientos (no es gasto) y no sobrescribe los anteriores', async () => {
+    const storage = new MemoryStorage()
+    const repos = createLocalRepositories(storage)
+    await repos.transactions.add(tx('previo'))
+    await repos.savings.createJar(jar('a'))
+    await repos.savings.addContribution(contribution('c1', 'a', 100))
+    await repos.savings.addContribution(contribution('c2', 'a', 100))
+    expect((await repos.transactions.list()).map((t) => t.id)).toEqual(['previo'])
+    expect(await repos.savings.listContributions()).toHaveLength(2)
+  })
+
+  it('no expone edición ni borrado de aportes', () => {
+    const { savings } = createLocalRepositories(new MemoryStorage())
+    expect(savings).not.toHaveProperty('delete')
+    expect(savings).not.toHaveProperty('deleteContribution')
+    expect(savings).not.toHaveProperty('updateContribution')
   })
 })

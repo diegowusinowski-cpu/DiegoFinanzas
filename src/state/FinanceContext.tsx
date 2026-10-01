@@ -1,18 +1,24 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   activeReminders,
+  buildContribution,
   buildInstallmentPayment,
+  buildJar,
   buildLoanBundle,
   buildReminder,
   buildTransaction,
   cancelTransaction,
   computeBalance,
   latestTransactions,
+  savingsTotals,
   settleDueTransactions,
+  sortJars,
   sortByRecency,
   sortLoans,
   toIso,
   toLocalDate,
+  validateContribution,
+  validateNewJar,
   validateNewLoan,
   validateNewReminder,
   validateNewTransaction,
@@ -20,10 +26,12 @@ import {
   type Category,
   type CurrencyCode,
   type InstallmentPayment,
+  type JarErrors,
   type Loan,
   type LoanBundle,
   type LoanErrors,
   type LoanInstallment,
+  type NewJarInput,
   type NewLoanInput,
   type MinorUnits,
   type NewReminderInput,
@@ -31,6 +39,9 @@ import {
   type Reminder,
   type ReminderErrors,
   type Result,
+  type SavingsContribution,
+  type SavingsJar,
+  type SavingsTotals,
   type Transaction,
   type ValidationErrors,
 } from '@/domain'
@@ -76,6 +87,17 @@ interface FinanceContextValue {
    * avance del préstamo y lo completa si era la última.
    */
   payInstallment(installmentId: string): Promise<Result<InstallmentPayment, ActionError<never>>>
+  /** Frascos de ahorro (más recientes primero) y todos sus aportes. */
+  jars: SavingsJar[]
+  contributions: SavingsContribution[]
+  /** Saldo total, dinero asignado a frascos y disponible. Ahorrar no cambia el saldo total. */
+  savings: SavingsTotals
+  createJar(input: NewJarInput): Promise<Result<SavingsJar, ActionError<JarErrors>>>
+  /**
+   * Reserva dinero en un frasco. Es una asignación interna: no crea movimientos ni modifica el saldo;
+   * solo baja el dinero disponible.
+   */
+  addToJar(jarId: string, amount: MinorUnits): Promise<Result<SavingsContribution, ActionError<never>>>
 }
 
 const FinanceContext = createContext<FinanceContextValue | null>(null)
@@ -92,6 +114,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   const [reminders, setReminders] = useState<Reminder[]>([])
   const [loans, setLoans] = useState<Loan[]>([])
   const [installments, setInstallments] = useState<LoanInstallment[]>([])
+  const [jars, setJars] = useState<SavingsJar[]>([])
+  const [contributions, setContributions] = useState<SavingsContribution[]>([])
   const [today, setToday] = useState(() => toLocalDate(now()))
   const [reloadKey, setReloadKey] = useState(0)
   const transactionsRef = useRef<Transaction[]>([])
@@ -104,13 +128,16 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     void (async () => {
       try {
         const current = now()
-        const [accountList, categoryList, storedTransactions, storedReminders, storedLoans, storedInstallments] = await Promise.all([
+        const [accountList, categoryList, storedTransactions, storedReminders, storedLoans, storedInstallments, storedJars, storedContributions] =
+          await Promise.all([
           repositories.accounts.ensureDefault(current),
           repositories.categories.list(),
           repositories.transactions.list(),
           repositories.reminders.list(),
           repositories.loans.listLoans(),
           repositories.loans.listInstallments(),
+          repositories.savings.listJars(),
+          repositories.savings.listContributions(),
         ])
         const settled = settleDueTransactions(storedTransactions, current)
         if (settled.changed.length > 0) await repositories.transactions.update(settled.changed)
@@ -121,6 +148,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         setReminders(storedReminders)
         setLoans(storedLoans)
         setInstallments(storedInstallments)
+        setJars(storedJars)
+        setContributions(storedContributions)
         setToday(toLocalDate(current))
         setErrorMessage(null)
         setStatus('ready')
@@ -220,6 +249,44 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     [primaryAccount, installments, loans, repositories, now, newId],
   )
 
+  const createJar = useCallback<FinanceContextValue['createJar']>(
+    async (input) => {
+      const errors = validateNewJar(input, toLocalDate(now()))
+      if (Object.keys(errors).length > 0) return { ok: false, error: { fields: errors } }
+      const jar = buildJar(input, { now: now(), newId })
+      try {
+        await repositories.savings.createJar(jar)
+      } catch {
+        return { ok: false, error: { message: PERSIST_ERROR } }
+      }
+      setJars((prev) => [...prev, jar])
+      return { ok: true, value: jar }
+    },
+    [repositories, now, newId],
+  )
+
+  const addToJar = useCallback<FinanceContextValue['addToJar']>(
+    async (jarId, amount) => {
+      const jar = jars.find((j) => j.id === jarId)
+      if (!jar) return { ok: false, error: { message: 'No encontramos ese frasco.' } }
+      const { available } = savingsTotals(computeBalance(transactionsRef.current, undefined, 'ARS'), jars, contributions)
+      const problem = validateContribution(amount, available)
+      if (problem === 'INVALID_AMOUNT') return { ok: false, error: { message: 'Ingresá un monto mayor a cero.' } }
+      if (problem === 'NOT_ENOUGH_AVAILABLE') {
+        return { ok: false, error: { message: 'No tenés tanto dinero disponible sin asignar.' } }
+      }
+      const contribution = buildContribution(jar, amount, { now: now(), newId })
+      try {
+        await repositories.savings.addContribution(contribution)
+      } catch {
+        return { ok: false, error: { message: PERSIST_ERROR } }
+      }
+      setContributions((prev) => [...prev, contribution])
+      return { ok: true, value: contribution }
+    },
+    [jars, contributions, repositories, now, newId],
+  )
+
   const cancel = useCallback(
     async (id: string) => {
       const target = transactionsRef.current.find((t) => t.id === id)
@@ -284,8 +351,13 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       installments,
       createLoan,
       payInstallment,
+      jars: sortJars(jars),
+      contributions,
+      savings: savingsTotals(computeBalance(transactions, undefined, 'ARS'), jars, contributions),
+      createJar,
+      addToJar,
     }),
-    [status, errorMessage, accounts, primaryAccount, categories, transactions, reminders, today, addTransaction, cancel, addReminder, dismissReminder, loans, installments, createLoan, payInstallment],
+    [status, errorMessage, accounts, primaryAccount, categories, transactions, reminders, today, addTransaction, cancel, addReminder, dismissReminder, loans, installments, createLoan, payInstallment, jars, contributions, createJar, addToJar],
   )
 
   return <FinanceContext.Provider value={value}>{children}</FinanceContext.Provider>

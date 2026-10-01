@@ -13,6 +13,7 @@ import { TypeChooserSheet } from './flow/TypeChooserSheet'
 import { LoansScreen } from './loans/LoansScreen'
 import { DashboardScreen } from './screens/DashboardScreen'
 import { LoginScreen } from './screens/LoginScreen'
+import { SavingsScreen } from './savings/SavingsScreen'
 import { MoreScreen } from './screens/MoreScreen'
 import { MovementsScreen } from './screens/MovementsScreen'
 
@@ -69,6 +70,8 @@ function Shell() {
         <MovementsScreen onBack={() => setTab('home')} />
       ) : tab === 'loans' ? (
         <LoansScreen onBack={() => setTab('home')} />
+      ) : tab === 'savings' ? (
+        <SavingsScreen onBack={() => setTab('home')} />
       ) : (
         <MoreScreen />
       )}
