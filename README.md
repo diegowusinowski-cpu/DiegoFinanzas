@@ -32,12 +32,15 @@ El saldo nunca se guarda: se deriva de los movimientos `COMPLETED`.
 - Backend/DB: implementar `Repositories` y `AuthService` remotos y cambiarlos en `src/services/container.ts`.
 - Préstamos, cuotas y cobros: generar recordatorios implementando `ReminderGenerator` (`src/domain/reminders.ts`).
 - Cuentas múltiples: `Transaction.accountId` y `computeBalance(tx, accountId)` ya existen.
-- Producción: `/api/dolar-blue` hoy lo sirve el plugin de Vite (`dev` y `preview`); en un hosting real hay que desplegar el mismo handler (`server/ratesApi.ts`) como función/servidor.
+- Producción: `/api/dolar-blue` es una función de Vercel (`api/dolar-blue.ts`); en `vite dev`/`vite preview` lo sirve el plugin `server/ratesApi.ts` con la misma lectura.
 
-## Despliegue (Vercel)
+## Despliegue (Vercel) y Dólar Blue
 
-1. En vercel.com → *Add New Project* → importar este repositorio (rama a publicar).
-2. Framework: Vite (se detecta solo, `vercel.json` ya lo define). Deploy.
-3. `api/dolar-blue.ts` se publica como función; la app la consume en `/api/dolar-blue`.
+1. En vercel.com → *Add New Project* → importar este repositorio (rama a publicar). Framework: Vite (lo define `vercel.json`).
+2. **No hace falta ninguna variable de entorno.** `api/dolar-blue.ts` se publica solo como función (Node, `maxDuration` 15 s), lee DolarHoy.com del lado del servidor y la app lo consume en `/api/dolar-blue` (mismo origen: sin CORS).
+3. Verificación después del deploy: abrir `https://TU-DOMINIO/api/dolar-blue`. Debe devolver JSON con `buy`, `sell`, `updatedAt`, `fetchedAt` y `source` (`DolarHoy.com`). Si devuelve `502 {"error":"source_unavailable"|"parse_failed"}`, DolarHoy no respondió o cambió su HTML (ver los logs de la función en Vercel → *Logs*); la app sigue mostrando la última cotización válida guardada.
+4. Si la app se sirve desde OTRO dominio que la función, definir en el build `VITE_RATES_ENDPOINT=https://TU-DOMINIO-VERCEL/api/dolar-blue` (la función ya responde con CORS abierto).
+
+La lectura usa la estructura actual de DolarHoy (`.title a[href="/cotizaciondolarblue"]` + `.values .compra/.venta .val` + `.update`), con la portada y la página `/cotizaciondolarblue` como fuentes, y un respaldo por texto. Cubierta por `server/dolarhoy.test.ts`.
 
 La app usa HTTPS, requisito de la PWA y del cifrado del PIN (`crypto.subtle`).

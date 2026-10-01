@@ -15,5 +15,5 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
-  "include": ["vite.config.ts", "server", "src/domain"]
+  "include": ["vite.config.ts", "server", "api", "src/domain"]
 }

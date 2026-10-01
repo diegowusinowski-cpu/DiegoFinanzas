@@ -47,6 +47,8 @@ export class DolarHoyRateProvider implements ExchangeRateProvider {
     try {
       const response = await this.fetchImpl(this.endpoint, {
         headers: { Accept: 'application/json' },
+        // El navegador no reutiliza respuestas viejas: la caché de 60 s la maneja la CDN del servidor.
+        cache: 'no-store',
         signal: timeout.signal,
       })
       if (!response.ok) throw new RateUnavailableError()

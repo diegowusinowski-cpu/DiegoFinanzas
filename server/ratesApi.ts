@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Plugin } from 'vite'
-import { DOLARHOY_SOURCE, DolarHoyError, fetchDolarHoyBlue, type DolarBlueQuote } from './dolarhoy.ts'
+import { DOLARHOY_SOURCE, DolarHoyError, fetchDolarHoyBlue, setCors, type DolarBlueQuote } from './dolarhoy.ts'
 
 const CACHE_TTL_MS = 60_000
 const ROUTE = '/api/dolar-blue'
@@ -16,6 +16,7 @@ type Middleware = (req: IncomingMessage, res: ServerResponse, next: () => void) 
 function sendJson(res: ServerResponse, status: number, body: unknown): void {
   res.statusCode = status
   res.setHeader('Content-Type', 'application/json; charset=utf-8')
+  setCors(res)
   res.setHeader('Cache-Control', 'no-store')
   res.end(JSON.stringify(body))
 }
@@ -38,6 +39,11 @@ export function createRatesMiddleware(fetchQuote = fetchDolarHoyBlue, now = Date
 
   return (req, res, next) => {
     if (!req.url?.split('?')[0]?.startsWith(ROUTE)) return next()
+    if (req.method === 'OPTIONS') {
+      setCors(res)
+      res.statusCode = 204
+      return res.end()
+    }
     if (req.method !== 'GET') return sendJson(res, 405, { error: 'method_not_allowed' })
 
     const respond = (entry: CacheEntry) =>
