@@ -77,8 +77,8 @@ export function latestServices(
   return found
 }
 
-/** Pesos → dólares con la cotización indicada (pesos por dólar). Sin cotización válida no hay conversión. */
-export function convertArsToUsd(arsMinor: MinorUnits, pesosPerDollar: number): MinorUnits | null {
+/** Dólares → pesos con la cotización indicada (pesos por dólar). Sin cotización válida no hay equivalente. */
+export function convertUsdToArs(usdMinor: MinorUnits, pesosPerDollar: number): MinorUnits | null {
   if (!Number.isFinite(pesosPerDollar) || pesosPerDollar <= 0) return null
-  return Math.round(arsMinor / pesosPerDollar)
+  return Math.round(usdMinor * pesosPerDollar)
 }

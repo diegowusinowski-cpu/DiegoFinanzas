@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useAuth } from '@/state/AuthContext'
 import { useFinance } from '@/state/FinanceContext'
 import { latestServices, type TransactionType } from '@/domain'
@@ -7,6 +8,7 @@ import { Button } from '../components/Button'
 import { EmptyState, Skeleton } from '../components/Card'
 import { Icon } from '../components/Icon'
 import { MovementItem } from '../components/MovementItem'
+import { UsdBalanceSheet } from '../components/UsdBalanceSheet'
 import { ReminderCard } from '../components/ReminderCards'
 import { SectionAction, SectionHeader } from '../components/SectionHeader'
 import { ServiceItem } from '../components/ServiceItem'
@@ -25,12 +27,14 @@ export function DashboardScreen({ onNewTransaction, onNewReminder, onSeeAll }: D
   const finance = useFinance()
   const { state: rateState } = useUsdBlueRate()
   const loading = finance.status === 'loading'
+  const [usdOpen, setUsdOpen] = useState(false)
   const services = latestServices(finance.transactions, finance.categories, LATEST_SERVICES_LIMIT)
 
   return (
+    <>
     <div className="animate-rise">
       {/* Superficie financiera: identidad, saldo y acciones principales. */}
-      <section className="flex min-h-[27rem] flex-col bg-panel-texture px-gutter pt-safe pb-10 text-on-panel">
+      <section className="bg-panel-texture px-gutter pt-safe pb-9 text-on-panel">
         <header className="flex min-h-control-md items-center justify-between">
           <Wordmark className="text-on-panel" />
           {profile ? (
@@ -40,15 +44,15 @@ export function DashboardScreen({ onNewTransaction, onNewReminder, onSeeAll }: D
           ) : null}
         </header>
 
-        <div className="mt-8 flex flex-1 flex-col justify-between gap-8">
-          <div className="flex flex-1 flex-col justify-center">
-            <BalanceCarousel
-              ars={finance.balance}
-              usd={finance.balanceOf('USD')}
-              loading={loading}
-              rate={rateState}
-            />
-          </div>
+        <div className="mt-8 flex flex-col gap-6">
+          <BalanceCarousel
+            ars={finance.balance}
+            usd={finance.usdBalance}
+            loading={loading}
+            rate={rateState}
+            today={finance.today}
+            onEditUsd={() => setUsdOpen(true)}
+          />
 
           <section aria-label="Acciones principales" className="grid grid-cols-2 gap-2.5">
             <Button variant="inverse" disabled={loading} onClick={() => onNewTransaction('INCOME')}>
@@ -143,5 +147,17 @@ export function DashboardScreen({ onNewTransaction, onNewReminder, onSeeAll }: D
         </section>
       </div>
     </div>
+
+      {/* Fuera del contenedor animado: la hoja fija debe cubrir toda la pantalla. */}
+      <UsdBalanceSheet
+        open={usdOpen}
+        current={finance.usdBalance}
+        onClose={() => setUsdOpen(false)}
+        onSave={async (amount) => {
+          const result = await finance.setUsdBalance(amount)
+          return result.ok ? null : (result.error.message ?? 'No se pudo guardar.')
+        }}
+      />
+    </>
   )
 }

@@ -196,3 +196,14 @@ export interface SavingsContribution {
   date: LocalDate
   createdAt: IsoTimestamp
 }
+
+/**
+ * Saldo que la persona declara a mano en otra moneda (hoy, dólares). Es un dato propio: no es un
+ * movimiento, no modifica el saldo en pesos y se guarda en la moneda original.
+ */
+export interface ManualBalance {
+  id: EntityId
+  currency: 'USD'
+  amount: MinorUnits
+  updatedAt: IsoTimestamp
+}

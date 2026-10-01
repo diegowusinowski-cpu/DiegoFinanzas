@@ -33,6 +33,7 @@ export type IconName =
   | 'leisure'
   | 'loan'
   | 'jar'
+  | 'edit'
   | 'subscription'
   | 'work'
   | 'store'
@@ -158,6 +159,12 @@ const PATHS: Record<IconName, ReactNode> = {
       <ellipse cx="12" cy="6.5" rx="6.5" ry="2.75" />
       <path d="M5.5 6.5v5c0 1.5 2.9 2.75 6.5 2.75s6.5-1.25 6.5-2.75v-5" />
       <path d="M5.5 11.5v5c0 1.5 2.9 2.75 6.5 2.75s6.5-1.25 6.5-2.75v-5" />
+    </>
+  ),
+  edit: (
+    <>
+      <path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17z" />
+      <path d="m14.5 7.5 3 3" />
     </>
   ),
   jar: (

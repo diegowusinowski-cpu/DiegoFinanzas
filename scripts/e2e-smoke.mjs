@@ -106,17 +106,26 @@ async function run(name, device, { mockRate } = {}) {
   await track.evaluate((el) => el.scrollTo({ left: el.clientWidth, behavior: 'instant' })) // equivale al deslizamiento
   await page.getByRole('button', { name: 'Saldo en dólares', exact: true }).and(page.locator('[aria-current="true"]')).waitFor()
   assert.ok(Math.abs((await track.evaluate((el) => el.scrollLeft)) - (await track.evaluate((el) => el.clientWidth))) < 2, 'el carrusel se ancla en la página USD')
+  // Dólares cargados a mano: se guardan en USD, no tocan los pesos y su equivalente usa la cotización disponible.
+  await page.getByRole('button', { name: 'Editar saldo en dólares' }).click()
+  const usdDialog = page.getByRole('dialog', { name: 'Saldo en dólares' })
+  await usdDialog.getByLabel('Dólares que tenés').fill('1000')
+  await usdDialog.getByRole('button', { name: 'Guardar' }).click()
+  await usdDialog.waitFor({ state: 'detached' })
+  assert.equal(await page.getByTestId('balance-usd').textContent(), 'US$ 1.000,00')
   if (mockRate) {
-    await page.getByTestId('balance-usd').filter({ hasText: 'US$' }).waitFor()
-    assert.equal(await page.getByTestId('balance-usd').textContent(), 'US$ 5,12') // $ 7.199,50 / 1.405,5
-    log(`[${name}] saldo en USD calculado con la cotización de la fuente (US$ 5,12)`)
+    await page.getByTestId('balance-usd-equivalent').filter({ hasText: '≈ $ 1.405.500,00 ARS' }).waitFor() // US$ 1.000 × $ 1.405,5
+    assert.match(await page.getByTestId('rate-used').textContent(), /USD 1 = \$ 1\.405,50 ARS · Actualizado/)
+    log(`[${name}] USD cargado a mano (US$ 1.000) con equivalente en pesos a la cotización de la fuente`)
   } else {
-    await page.getByTestId('balance-usd').filter({ hasText: 'No disponible' }).waitFor()
-    log(`[${name}] sin cotización: USD "No disponible", sin valores inventados`)
+    await page.getByTestId('balance-usd-equivalent').filter({ hasText: 'no disponible' }).waitFor()
+    assert.equal(await page.getByTestId('rate-used').count(), 0)
+    log(`[${name}] USD cargado a mano; sin cotización: equivalente "no disponible", sin valores inventados`)
   }
   await page.screenshot({ path: `${OUT}/${name}-1c-inicio-usd.png` })
   await page.getByRole('button', { name: 'Saldo en pesos' }).click()
   await page.getByRole('button', { name: 'Saldo en pesos' }).and(page.locator('[aria-current="true"]')).waitFor()
+  assert.equal(await page.getByTestId('balance').textContent(), '$ 7.199,50') // los pesos no cambiaron
   assert.equal(await page.getByRole('heading', { name: 'Últimos servicios' }).count(), 1)
 
   // Recordatorio

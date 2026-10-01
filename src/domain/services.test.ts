@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_CATEGORIES } from './categories'
-import { convertArsToUsd, detectService, latestServices } from './services'
+import { convertUsdToArs, detectService, latestServices } from './services'
 import { buildTransaction } from './transactions'
 import type { Transaction, TransactionStatus, TransactionType } from './models'
 
@@ -80,15 +80,25 @@ describe('latestServices', () => {
   })
 })
 
-describe('convertArsToUsd', () => {
-  it('divide los pesos por la cotización y redondea al centavo', () => {
-    expect(convertArsToUsd(140_550, 1405.5)).toBe(100) // $1.405,50 → US$ 1,00
-    expect(convertArsToUsd(1_000_000, 1500)).toBe(667)
-    expect(convertArsToUsd(-140_550, 1405.5)).toBe(-100)
+describe('convertUsdToArs', () => {
+  it('multiplica los dólares por la cotización del día (US$ 1.000 a $ 1.500 = $ 1.500.000)', () => {
+    expect(convertUsdToArs(100_000, 1500)).toBe(150_000_000)
+  })
+  it('si la cotización cambia, el equivalente cambia y los dólares no (US$ 1.000 a $ 1.550 = $ 1.550.000)', () => {
+    const usd = 100_000
+    expect(convertUsdToArs(usd, 1550)).toBe(155_000_000)
+    expect(usd).toBe(100_000)
+  })
+  it('redondea al centavo y acepta cotizaciones con decimales', () => {
+    expect(convertUsdToArs(1_050, 1405.5)).toBe(1_475_775) // US$ 10,50 → $ 14.757,75
+    expect(convertUsdToArs(1_001, 1405.55)).toBe(1_406_956) // US$ 10,01 → $ 14.069,56 (redondeado al centavo)
+  })
+  it('con cero dólares da cero', () => {
+    expect(convertUsdToArs(0, 1500)).toBe(0)
   })
   it('sin cotización válida no convierte', () => {
-    expect(convertArsToUsd(1000, 0)).toBeNull()
-    expect(convertArsToUsd(1000, -5)).toBeNull()
-    expect(convertArsToUsd(1000, Number.NaN)).toBeNull()
+    expect(convertUsdToArs(1000, 0)).toBeNull()
+    expect(convertUsdToArs(1000, -5)).toBeNull()
+    expect(convertUsdToArs(1000, Number.NaN)).toBeNull()
   })
 })

@@ -243,3 +243,29 @@ describe('ahorros: persistencia', () => {
     expect(savings).not.toHaveProperty('updateContribution')
   })
 })
+
+describe('saldo manual en dólares: persistencia', () => {
+  const usd = (amount: number) => ({ id: 'usd-balance', currency: 'USD' as const, amount, updatedAt: NOW.toISOString() })
+
+  it('sin nada guardado no hay saldo', async () => {
+    expect(await createLocalRepositories(new MemoryStorage()).manualBalances.getUsd()).toBeNull()
+  })
+
+  it('guarda el saldo y lo recupera en otra instancia; editar lo reemplaza (un solo valor)', async () => {
+    const storage = new MemoryStorage()
+    await createLocalRepositories(storage).manualBalances.setUsd(usd(100_000))
+    expect((await createLocalRepositories(storage).manualBalances.getUsd())?.amount).toBe(100_000)
+    await createLocalRepositories(storage).manualBalances.setUsd(usd(250_050))
+    const again = createLocalRepositories(storage)
+    expect((await again.manualBalances.getUsd())?.amount).toBe(250_050)
+    expect(JSON.parse(storage.getItem(STORAGE_KEYS.manualBalances) ?? '{}').items).toHaveLength(1)
+  })
+
+  it('no es un movimiento: no toca las transacciones', async () => {
+    const storage = new MemoryStorage()
+    const repos = createLocalRepositories(storage)
+    await repos.transactions.add(tx('previo'))
+    await repos.manualBalances.setUsd(usd(100_000))
+    expect((await repos.transactions.list()).map((t) => t.id)).toEqual(['previo'])
+  })
+})

@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import {
   activeReminders,
   buildContribution,
+  buildUsdBalance,
   buildInstallmentPayment,
   buildJar,
   buildLoanBundle,
@@ -18,6 +19,7 @@ import {
   toIso,
   toLocalDate,
   validateContribution,
+  validateUsdBalance,
   validateNewJar,
   validateNewLoan,
   validateNewReminder,
@@ -31,6 +33,7 @@ import {
   type LoanBundle,
   type LoanErrors,
   type LoanInstallment,
+  type ManualBalance,
   type NewJarInput,
   type NewLoanInput,
   type MinorUnits,
@@ -98,6 +101,10 @@ interface FinanceContextValue {
    * solo baja el dinero disponible.
    */
   addToJar(jarId: string, amount: MinorUnits): Promise<Result<SavingsContribution, ActionError<never>>>
+  /** Dólares que la persona declaró a mano (0 si todavía no cargó nada). No son un movimiento ni tocan el saldo en pesos. */
+  usdBalance: MinorUnits
+  /** Guarda (reemplaza) el saldo en dólares. */
+  setUsdBalance(amount: MinorUnits): Promise<Result<ManualBalance, ActionError<never>>>
 }
 
 const FinanceContext = createContext<FinanceContextValue | null>(null)
@@ -116,6 +123,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   const [installments, setInstallments] = useState<LoanInstallment[]>([])
   const [jars, setJars] = useState<SavingsJar[]>([])
   const [contributions, setContributions] = useState<SavingsContribution[]>([])
+  const [usdBalance, setUsdBalanceState] = useState<MinorUnits>(0)
   const [today, setToday] = useState(() => toLocalDate(now()))
   const [reloadKey, setReloadKey] = useState(0)
   const transactionsRef = useRef<Transaction[]>([])
@@ -128,7 +136,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     void (async () => {
       try {
         const current = now()
-        const [accountList, categoryList, storedTransactions, storedReminders, storedLoans, storedInstallments, storedJars, storedContributions] =
+        const [accountList, categoryList, storedTransactions, storedReminders, storedLoans, storedInstallments, storedJars, storedContributions, storedUsd] =
           await Promise.all([
           repositories.accounts.ensureDefault(current),
           repositories.categories.list(),
@@ -138,6 +146,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
           repositories.loans.listInstallments(),
           repositories.savings.listJars(),
           repositories.savings.listContributions(),
+          repositories.manualBalances.getUsd(),
         ])
         const settled = settleDueTransactions(storedTransactions, current)
         if (settled.changed.length > 0) await repositories.transactions.update(settled.changed)
@@ -150,6 +159,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
         setInstallments(storedInstallments)
         setJars(storedJars)
         setContributions(storedContributions)
+        setUsdBalanceState(storedUsd?.amount ?? 0)
         setToday(toLocalDate(current))
         setErrorMessage(null)
         setStatus('ready')
@@ -287,6 +297,22 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     [jars, contributions, repositories, now, newId],
   )
 
+  const setUsdBalance = useCallback<FinanceContextValue['setUsdBalance']>(
+    async (amount) => {
+      const problem = validateUsdBalance(amount)
+      if (problem) return { ok: false, error: { message: problem } }
+      const balance = buildUsdBalance(amount, now())
+      try {
+        await repositories.manualBalances.setUsd(balance)
+      } catch {
+        return { ok: false, error: { message: PERSIST_ERROR } }
+      }
+      setUsdBalanceState(balance.amount)
+      return { ok: true, value: balance }
+    },
+    [repositories, now],
+  )
+
   const cancel = useCallback(
     async (id: string) => {
       const target = transactionsRef.current.find((t) => t.id === id)
@@ -356,8 +382,10 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       savings: savingsTotals(computeBalance(transactions, undefined, 'ARS'), jars, contributions),
       createJar,
       addToJar,
+      usdBalance,
+      setUsdBalance,
     }),
-    [status, errorMessage, accounts, primaryAccount, categories, transactions, reminders, today, addTransaction, cancel, addReminder, dismissReminder, loans, installments, createLoan, payInstallment, jars, contributions, createJar, addToJar],
+    [status, errorMessage, accounts, primaryAccount, categories, transactions, reminders, today, addTransaction, cancel, addReminder, dismissReminder, loans, installments, createLoan, payInstallment, jars, contributions, createJar, addToJar, usdBalance, setUsdBalance],
   )
 
   return <FinanceContext.Provider value={value}>{children}</FinanceContext.Provider>

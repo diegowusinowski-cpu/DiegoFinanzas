@@ -255,6 +255,20 @@ describe('Recordatorios', () => {
 
 describe('Inicio: saldo en pesos y dólares', () => {
   const usd = () => screen.getByTestId('balance-usd')
+  const equivalent = () => screen.getByTestId('balance-usd-equivalent')
+
+  async function setUsd(user: ReturnType<typeof setupUser>, text: string) {
+    await user.click(screen.getByRole('button', { name: 'Saldo en dólares' })) // página USD del carrusel
+    await user.click(screen.getByRole('button', { name: 'Editar saldo en dólares' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Saldo en dólares' })
+    const input = within(dialog).getByLabelText('Dólares que tenés')
+    await user.clear(input)
+    if (text) await user.type(input, text)
+    await user.click(within(dialog).getByRole('button', { name: 'Guardar' }))
+    return dialog
+  }
+  const goToUsd = (user: ReturnType<typeof setupUser>) => user.click(screen.getByRole('button', { name: 'Saldo en dólares' }))
+  const rateWith = (sell: number) => ({ getUsdBlue: async () => ({ ...SAMPLE_RATE, sell }) })
 
   it('muestra solo Recordatorios, Últimos movimientos y Últimos servicios, en ese orden, sin tasas', async () => {
     const user = setupUser()
@@ -263,7 +277,6 @@ describe('Inicio: saldo en pesos y dólares', () => {
     expect(headings).toEqual(['Saldo disponible', 'Recordatorios', 'Últimos movimientos', 'Últimos servicios'])
     expect(screen.queryByText(/Tasas de conversión/)).not.toBeInTheDocument()
     expect(screen.queryByTestId('rate-buy')).not.toBeInTheDocument()
-    expect(screen.queryByText('Dieto Wusinowski Finanzas')).not.toBeInTheDocument()
   })
 
   it('la página principal es el saldo en pesos y hay un indicador para deslizar al dólar', async () => {
@@ -279,39 +292,92 @@ describe('Inicio: saldo en pesos y dólares', () => {
     expect(within(group).getByRole('button', { name: 'Saldo en pesos' })).toHaveAttribute('aria-current', 'true')
   })
 
-  it('el saldo en USD sale de los pesos y la cotización venta disponible (sin valores fijos)', async () => {
+  it('al principio el saldo en dólares es US$ 0,00 y invita a cargarlo', async () => {
     const user = setupUser()
     await firstRun(user)
-    await addMovement(user, 'Ingreso', { category: 'Trabajo en relación de dependencia', amount: '14055', concept: 'Sueldo' })
-    expect(balance()).toBe('$ 14.055,00')
-    // SAMPLE_RATE: venta $1.405,5 → 14.055 / 1.405,5 = 10 dólares.
-    await waitFor(() => expect(usd()).toHaveTextContent('US$ 10,00'))
+    expect(usd()).toHaveTextContent('US$ 0,00')
+    expect(equivalent()).toHaveTextContent('Tocá el lápiz para cargar tus dólares')
+    expect(screen.queryByTestId('rate-used')).not.toBeInTheDocument()
   })
 
-  it('usa la cotización que entrega la fuente configurada: otra cotización, otro resultado', async () => {
+  it('se carga a mano en dólares: se muestra, no toca los pesos y no crea ningún movimiento', async () => {
     const user = setupUser()
-    const rates = { getUsdBlue: async () => ({ ...SAMPLE_RATE, sell: 2000 }) }
-    await firstRun(user, createTestServices({ rates }))
-    await addMovement(user, 'Ingreso', { category: 'Trabajo en relación de dependencia', amount: '10000', concept: 'Sueldo' })
-    await waitFor(() => expect(usd()).toHaveTextContent('US$ 5,00'))
+    const services = await firstRun(user)
+    await addMovement(user, 'Ingreso', { category: 'Trabajo en relación de dependencia', amount: '5000', concept: 'Sueldo' })
+    await setUsd(user, '1000')
+    await waitFor(() => expect(usd()).toHaveTextContent('US$ 1.000,00'))
+    expect(balance()).toBe('$ 5.000,00') // los pesos siguen igual
+    expect(await services.repositories.transactions.list()).toHaveLength(1) // solo el ingreso: el USD no es un movimiento
+    expect(screen.getByRole('button', { name: 'Gasto' })).toBeInTheDocument()
   })
 
-  it('suma lo registrado en dólares al equivalente de los pesos', async () => {
+  it('el equivalente en pesos usa la cotización del día y se muestra la cotización usada', async () => {
+    const user = setupUser()
+    await firstRun(user, createTestServices({ rates: rateWith(1500) }))
+    await setUsd(user, '1000')
+    await waitFor(() => expect(equivalent()).toHaveTextContent('≈ $ 1.500.000,00 ARS'))
+    await goToUsd(user)
+    expect(screen.getByTestId('rate-used')).toHaveTextContent('USD 1 = $ 1.500,00 ARS · Actualizado hoy')
+    expect(usd()).toHaveTextContent('US$ 1.000,00')
+  })
+
+  it('si mañana cambia la cotización, el equivalente se actualiza y los dólares no', async () => {
+    const user = setupUser()
+    const first = createTestServices({ rates: rateWith(1500) })
+    await firstRun(user, first)
+    await setUsd(user, '1000')
+    await waitFor(() => expect(equivalent()).toHaveTextContent('$ 1.500.000,00'))
+    document.body.innerHTML = ''
+
+    mount({ ...first, rates: rateWith(1550) }) // al abrir de nuevo se consulta la cotización vigente
+    await waitFor(() => expect(equivalent()).toHaveTextContent('≈ $ 1.550.000,00 ARS'))
+    expect(usd()).toHaveTextContent('US$ 1.000,00')
+  })
+
+  it('los dólares cargados se conservan al volver a abrir la app', async () => {
+    const user = setupUser()
+    const services = await firstRun(user)
+    await setUsd(user, '2.500,50')
+    await waitFor(() => expect(usd()).toHaveTextContent('US$ 2.500,50'))
+    document.body.innerHTML = ''
+    mount(services)
+    await screen.findByTestId('balance')
+    await waitFor(() => expect(usd()).toHaveTextContent('US$ 2.500,50'))
+    expect((await services.repositories.manualBalances.getUsd())?.amount).toBe(250_050)
+  })
+
+  it('se puede modificar y poner en cero; el campo parte con el valor actual', async () => {
     const user = setupUser()
     await firstRun(user)
-    await addMovement(user, 'Ingreso', { category: 'Trabajo en relación de dependencia', amount: '1405,5', concept: 'Pesos' })
-    await addMovement(user, 'Ingreso', { country: 'Estados Unidos', category: 'Trabajo en relación de dependencia', amount: '5', concept: 'Dólares' })
-    await waitFor(() => expect(usd()).toHaveTextContent('US$ 6,00'))
-    expect(balance()).toBe('$ 1.405,50')
+    await setUsd(user, '1000')
+    await waitFor(() => expect(usd()).toHaveTextContent('US$ 1.000,00'))
+    await user.click(screen.getByRole('button', { name: 'Editar saldo en dólares' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Saldo en dólares' })
+    expect(within(dialog).getByLabelText('Dólares que tenés')).toHaveValue('1000')
+    await user.click(within(dialog).getByRole('button', { name: 'Cerrar' }))
+    await setUsd(user, '1250,5')
+    await waitFor(() => expect(usd()).toHaveTextContent('US$ 1.250,50'))
+    await setUsd(user, '0')
+    await waitFor(() => expect(usd()).toHaveTextContent('US$ 0,00'))
   })
 
-  it('sin cotización disponible el USD dice "No disponible" y no inventa valores', async () => {
+  it.each([['', /monto válido/], ['abc', /monto válido/], ['-5', /monto válido/]])('rechaza un monto inválido: "%s"', async (text, message) => {
+    const user = setupUser()
+    await firstRun(user)
+    const dialog = await setUsd(user, text)
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent(message)
+    expect(usd()).toHaveTextContent('US$ 0,00')
+  })
+
+  it('sin cotización disponible los dólares se ven igual y el equivalente dice que no está disponible', async () => {
     const user = setupUser()
     await firstRun(user, createTestServices({ rates: fakeRates('unavailable') }))
-    await addMovement(user, 'Ingreso', { category: 'Trabajo en relación de dependencia', amount: '1000', concept: 'Sueldo' })
-    await waitFor(() => expect(usd()).toHaveTextContent('No disponible'))
-    expect(usd()).not.toHaveTextContent('US$')
-    expect(balance()).toBe('$ 1.000,00') // los pesos siguen funcionando
+    await setUsd(user, '1000')
+    await waitFor(() => expect(usd()).toHaveTextContent('US$ 1.000,00'))
+    await waitFor(() => expect(equivalent()).toHaveTextContent('Equivalente en pesos no disponible'))
+    await goToUsd(user)
+    expect(screen.queryByTestId('rate-used')).not.toBeInTheDocument()
+    expect(equivalent()).not.toHaveTextContent('$ 1.')
   })
 
   it('usa la última cotización válida guardada si la fuente deja de responder', async () => {
@@ -319,40 +385,30 @@ describe('Inicio: saldo en pesos y dólares', () => {
     let up = true
     const source = {
       getUsdBlue: async () => {
-        if (up) return SAMPLE_RATE
+        if (up) return { ...SAMPLE_RATE, sell: 1500 }
         throw new RateUnavailableError()
       },
     }
     const user = setupUser()
     const services = await firstRun(user, createTestServices({ rates: new CachingRateProvider(source, storage) }))
-    await addMovement(user, 'Ingreso', { category: 'Trabajo en relación de dependencia', amount: '14055', concept: 'Sueldo' })
-    await waitFor(() => expect(usd()).toHaveTextContent('US$ 10,00'))
+    await setUsd(user, '1000')
+    await waitFor(() => expect(equivalent()).toHaveTextContent('$ 1.500.000,00'))
     document.body.innerHTML = ''
 
     up = false
     mount({ ...services, rates: new CachingRateProvider(source, storage) })
-    await waitFor(() => expect(usd()).toHaveTextContent('US$ 10,00'))
+    await waitFor(() => expect(equivalent()).toHaveTextContent('≈ $ 1.500.000,00 ARS'))
   })
 
-  it('al abrir usa al instante la cotización guardada y luego la actualiza', async () => {
-    const storage = new MemoryStorage()
-    await new CachingRateProvider({ getUsdBlue: async () => ({ ...SAMPLE_RATE, sell: 1000 }) }, storage).getUsdBlue()
-    let resolve: (value: typeof SAMPLE_RATE) => void = () => undefined
-    const slow = { getUsdBlue: () => new Promise<typeof SAMPLE_RATE>((r) => (resolve = r)) }
-    const user = setupUser()
-    await firstRun(user, createTestServices({ rates: new CachingRateProvider(slow, storage) }))
-    await addMovement(user, 'Ingreso', { category: 'Trabajo en relación de dependencia', amount: '1405,5', concept: 'Sueldo' })
-    await waitFor(() => expect(usd()).toHaveTextContent('US$ 1,41')) // 1.405,5 / 1.000
-    resolve(SAMPLE_RATE)
-    await waitFor(() => expect(usd()).toHaveTextContent('US$ 1,00')) // 1.405,5 / 1.405,5
-  })
-
-  it('el botón de ocultar saldo oculta pesos y dólares', async () => {
+  it('el botón de ocultar saldo oculta pesos, dólares y su equivalente', async () => {
     const user = setupUser()
     await firstRun(user)
+    await setUsd(user, '1000')
+    await waitFor(() => expect(usd()).toHaveTextContent('US$ 1.000,00'))
     await user.click(screen.getAllByRole('button', { name: 'Ocultar saldo' })[0]!)
     expect(screen.getByTestId('balance')).toHaveTextContent('$ ••••••')
     expect(usd()).toHaveTextContent('US$ ••••••')
+    expect(equivalent()).toHaveTextContent('≈ $ ••••••')
   })
 })
 

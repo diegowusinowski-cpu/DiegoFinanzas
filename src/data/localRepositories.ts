@@ -1,10 +1,11 @@
 import { DEFAULT_CATEGORIES, toIso } from '@/domain'
-import type { Account, Category, InstallmentPayment, Loan, SavingsContribution, SavingsJar, LoanBundle, LoanInstallment, Reminder, Transaction } from '@/domain'
+import type { Account, Category, InstallmentPayment, Loan, ManualBalance, SavingsContribution, SavingsJar, LoanBundle, LoanInstallment, Reminder, Transaction } from '@/domain'
 import { LocalCollection } from './localCollection'
 import type {
   AccountRepository,
   CategoryRepository,
   LoanRepository,
+  ManualBalanceRepository,
   ReminderRepository,
   Repositories,
   SavingsRepository,
@@ -21,6 +22,7 @@ export const STORAGE_KEYS = {
   installments: 'dwf.v1.loan-installments',
   savingsJars: 'dwf.v1.savings-jars',
   savingsContributions: 'dwf.v1.savings-contributions',
+  manualBalances: 'dwf.v1.manual-balances',
 } as const
 
 export const DEFAULT_ACCOUNT_ID = 'acc-main'
@@ -181,6 +183,19 @@ class LocalSavingsRepository implements SavingsRepository {
   }
 }
 
+class LocalManualBalanceRepository implements ManualBalanceRepository {
+  private readonly collection: LocalCollection<ManualBalance>
+  constructor(storage: KeyValueStorage) {
+    this.collection = new LocalCollection(storage, STORAGE_KEYS.manualBalances)
+  }
+  async getUsd() {
+    return this.collection.read().find((b) => b.currency === 'USD') ?? null
+  }
+  async setUsd(balance: ManualBalance) {
+    this.collection.upsertMany([balance])
+  }
+}
+
 export function createLocalRepositories(storage: KeyValueStorage): Repositories {
   return {
     transactions: new LocalTransactionRepository(storage),
@@ -189,5 +204,6 @@ export function createLocalRepositories(storage: KeyValueStorage): Repositories 
     reminders: new LocalReminderRepository(storage),
     loans: new LocalLoanRepository(storage),
     savings: new LocalSavingsRepository(storage),
+    manualBalances: new LocalManualBalanceRepository(storage),
   }
 }

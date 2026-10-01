@@ -2,6 +2,7 @@ import type {
   Account,
   Category,
   InstallmentPayment,
+  ManualBalance,
   Loan,
   LoanBundle,
   LoanInstallment,
@@ -65,6 +66,12 @@ export interface SavingsRepository {
   addContribution(contribution: SavingsContribution): Promise<void>
 }
 
+/** Saldo en dólares que la persona carga a mano (un único valor que se reemplaza al editarlo). */
+export interface ManualBalanceRepository {
+  getUsd(): Promise<ManualBalance | null>
+  setUsd(balance: ManualBalance): Promise<void>
+}
+
 export interface Repositories {
   transactions: TransactionRepository
   accounts: AccountRepository
@@ -72,4 +79,5 @@ export interface Repositories {
   reminders: ReminderRepository
   loans: LoanRepository
   savings: SavingsRepository
+  manualBalances: ManualBalanceRepository
 }
