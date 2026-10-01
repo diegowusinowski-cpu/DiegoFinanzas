@@ -17,6 +17,8 @@ export interface ExchangeRate {
  */
 export interface ExchangeRateProvider {
   getUsdBlue(signal?: AbortSignal): Promise<ExchangeRate>
+  /** Última cotización válida guardada en el dispositivo (si el proveedor la conserva). */
+  getCached?(): ExchangeRate | null
 }
 
 export class RateUnavailableError extends Error {

@@ -1,8 +1,11 @@
-import { screen, within } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { addMovement, balance, firstRun, mount, pressPin, setupUser } from '@/test/flowHelpers'
 import type { AppServices } from '@/services/container'
-import { createTestServices, fakeRates } from '@/test/services'
+import { MemoryStorage } from '@/data/storage'
+import { CachingRateProvider } from '@/services/rateCache'
+import { RateUnavailableError } from '@/services/rates'
+import { SAMPLE_RATE, createTestServices, fakeRates } from '@/test/services'
 
 afterEach(() => {
   vi.useRealTimers()
@@ -268,6 +271,56 @@ describe('Tasas de conversión', () => {
     await addMovement(user, 'Ingreso', { category: 'Préstamos', amount: '100', concept: 'Igual funciona' })
     expect(await screen.findByText('Igual funciona')).toBeInTheDocument()
     expect(balance()).toBe('$ 100,00')
+  })
+
+  it('muestra la fecha/hora de actualización de la fuente', async () => {
+    const user = setupUser()
+    await firstRun(user)
+    expect(await screen.findByTestId('rate-updated')).toHaveTextContent(/^Actualizado \d{2}\/\d{2}\/2026 \d{2}:\d{2} · Fuente: DolarHoy\.com$/)
+  })
+
+  it('conserva la última cotización válida si la fuente deja de responder, con su fecha y un aviso', async () => {
+    const storage = new MemoryStorage()
+    let up = true
+    const source = {
+      getUsdBlue: async () => {
+        if (up) return SAMPLE_RATE
+        throw new RateUnavailableError()
+      },
+    }
+    // Primera apertura: la fuente responde y la cotización queda guardada.
+    const user = setupUser()
+    const services = await firstRun(user, createTestServices({ rates: new CachingRateProvider(source, storage) }))
+    expect(await screen.findByTestId('rate-buy')).toHaveTextContent('$ 1.385')
+    expect(screen.queryByText(/No pudimos actualizar/)).not.toBeInTheDocument()
+    document.body.innerHTML = ''
+
+    // Segunda apertura con la fuente caída: se ve el último valor real, no un hueco ni un valor inventado.
+    up = false
+    mount({ ...services, rates: new CachingRateProvider(source, storage) })
+    expect(await screen.findByTestId('rate-buy')).toHaveTextContent('$ 1.385')
+    expect(screen.getByTestId('rate-sell')).toHaveTextContent('$ 1.405,5')
+    expect(await screen.findByText(/No pudimos actualizar/)).toBeInTheDocument()
+    expect(screen.getByTestId('rate-updated')).toHaveTextContent(/^Actualizado \d{2}\/\d{2}\/2026/)
+    expect(screen.queryByText(/cotización no está disponible/)).not.toBeInTheDocument()
+
+    // Al volver la fuente, "Reintentar" actualiza y desaparece el aviso.
+    up = true
+    await user.click(screen.getByRole('button', { name: 'Reintentar' }))
+    await waitFor(() => expect(screen.queryByText(/No pudimos actualizar/)).not.toBeInTheDocument())
+  })
+
+  it('al abrir muestra al instante la cotización guardada y la actualiza con la de la fuente', async () => {
+    const storage = new MemoryStorage()
+    const old = { ...SAMPLE_RATE, buy: 1300, sell: 1320 }
+    await new CachingRateProvider({ getUsdBlue: async () => old }, storage).getUsdBlue()
+    let resolve: (value: typeof SAMPLE_RATE) => void = () => undefined
+    const slow = { getUsdBlue: () => new Promise<typeof SAMPLE_RATE>((r) => (resolve = r)) }
+    const user = setupUser()
+    await firstRun(user, createTestServices({ rates: new CachingRateProvider(slow, storage) }))
+    expect(screen.getByTestId('rate-buy')).toHaveTextContent('$ 1.300')
+    resolve(SAMPLE_RATE)
+    await waitFor(() => expect(screen.getByTestId('rate-buy')).toHaveTextContent('$ 1.385'))
   })
 })
 

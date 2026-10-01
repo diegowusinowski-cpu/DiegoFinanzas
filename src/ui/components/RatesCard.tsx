@@ -13,6 +13,7 @@ const rateFormatter = new Intl.NumberFormat('es-AR', {
 const updatedFormatter = new Intl.DateTimeFormat('es-AR', {
   day: '2-digit',
   month: '2-digit',
+  year: 'numeric',
   hour: '2-digit',
   minute: '2-digit',
   hour12: false,
@@ -72,12 +73,22 @@ export function RatesCard({ state, onRefresh }: { state: RateState; onRefresh():
               </div>
             </dl>
           </div>
-          <p className="mt-2 text-caption text-fg-soft">
-            {state.rate.updatedAt
-              ? `Actualizado ${updatedFormatter.format(new Date(state.rate.updatedAt)).replace(',', '')} · `
-              : ''}
-            Fuente: {state.rate.source.name}
+          <p className="mt-2 text-caption text-fg-soft" data-testid="rate-updated">
+            {state.rate.updatedAt ? 'Actualizado' : 'Consultado'}{' '}
+            {updatedFormatter.format(new Date(state.rate.updatedAt ?? state.rate.fetchedAt)).replace(',', '')} · Fuente:{' '}
+            {state.rate.source.name}
           </p>
+          {state.stale ? (
+            <div className="mt-2 flex items-center justify-between gap-3" role="status">
+              <p className="min-w-0 flex-1 text-caption text-warning">
+                No pudimos actualizar. Mostramos la última cotización válida.
+              </p>
+              <Button variant="secondary" size="sm" onClick={onRefresh}>
+                <Icon name="refresh" size="sm" />
+                Reintentar
+              </Button>
+            </div>
+          ) : null}
         </div>
       )}
     </section>
