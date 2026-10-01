@@ -1,19 +1,25 @@
 /**
- * `GET /api/dolar-blue` — cotización REAL del Dólar Blue leída del lado del servidor desde DolarHoy.com.
+ * `GET /api/dolar-blue` — cotización REAL del Dólar Blue, leída del lado del servidor.
+ *
+ * Fuentes, en orden (si una falla o devuelve algo ilegible, se prueba la siguiente):
+ *   1. DolarHoy.com (portada y página /cotizaciondolarblue, leyendo el HTML)
+ *   2. DolarAPI.com (API pública de JSON que consulta DolarHoy)
+ *   3. Bluelytics (API pública de JSON, independiente)
+ * El navegador usa las mismas fuentes 2 y 3 de forma directa cuando no hay servidor (ver
+ * `src/services/liveRateProvider.ts`), así que la cotización funciona también en un hosting estático.
  *
  * Este archivo es la función serverless de Vercel y a la vez la única implementación de la lectura:
- * `server/dolarhoy.ts` (dev/preview de Vite y tests) la reexporta. Es autocontenido (sin imports
- * relativos) para que Vercel lo empaquete sin depender de la resolución de módulos del resto del repo.
+ * `server/dolarhoy.ts` (dev/preview de Vite y tests) y el navegador la reutilizan. Es autocontenido
+ * (sin imports relativos) para que Vercel lo empaquete sin depender de la resolución de módulos.
  *
- * Lectura (misma estructura de DolarHoy que usan otros clientes del sitio):
+ * Estructura de DolarHoy que se lee:
  *   <div class="title"><a href="/cotizaciondolarblue">Dólar Blue</a></div>
  *   <div class="values">
  *     <div class="compra"><div class="topic">Compra</div><div class="val">$1385</div></div>
  *     <div class="venta"><div class="topic">Venta</div><div class="val">$1405</div></div>
  *   </div>
  *   <div class="update">Actualizado por última vez: 30/09/26 12:05 PM</div>   (hora de Argentina, 12 h)
- * Se consulta la portada y, si falla, la página propia del Dólar Blue (también de DolarHoy.com).
- * Nunca se devuelven valores inventados: si no se puede leer, responde 502.
+ * Nunca se devuelven valores inventados: si ninguna fuente responde, el servidor contesta 502.
  */
 
 export const DOLARHOY_URL = 'https://dolarhoy.com/'
@@ -148,40 +154,159 @@ export function parseDolarHoyBlue(html: string): DolarBlueQuote {
   return { ...values, updatedAt: parseUpdatedAt(tokens) }
 }
 
-/* ── Consulta a DolarHoy.com ────────────────────────────────────────────── */
+/* ── Otras fuentes públicas (JSON) ─────────────────────────────────────── */
 
-const PAGE_TIMEOUT_MS = 4_500
+function isoOrNull(value: unknown): string | null {
+  if (typeof value !== 'string') return null
+  const time = Date.parse(value)
+  return Number.isNaN(time) ? null : new Date(time).toISOString()
+}
+
+function toNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null
+}
+
+/** DolarAPI: `{ compra, venta, fechaActualizacion }`. */
+export function parseDolarApi(body: string): DolarBlueQuote {
+  const data = JSON.parse(body) as { compra?: unknown; venta?: unknown; fechaActualizacion?: unknown }
+  const values = sane(toNumber(data.compra), toNumber(data.venta))
+  if (!values) throw new DolarHoyError('parse_failed', 'DolarAPI no devolvió una cotización válida.')
+  return { ...values, updatedAt: isoOrNull(data.fechaActualizacion) }
+}
+
+/** Bluelytics: `{ blue: { value_buy, value_sell }, last_update }`. */
+export function parseBluelytics(body: string): DolarBlueQuote {
+  const data = JSON.parse(body) as { blue?: { value_buy?: unknown; value_sell?: unknown }; last_update?: unknown }
+  const values = sane(toNumber(data.blue?.value_buy), toNumber(data.blue?.value_sell))
+  if (!values) throw new DolarHoyError('parse_failed', 'Bluelytics no devolvió una cotización válida.')
+  return { ...values, updatedAt: isoOrNull(data.last_update) }
+}
+
+/* ── Fuentes y consulta con respaldo ────────────────────────────────────── */
+
+export interface RateSource {
+  id: 'dolarhoy' | 'dolarapi' | 'bluelytics'
+  name: string
+  url: string
+  /** Direcciones a consultar, en orden. */
+  endpoints: readonly string[]
+  /** Convierte la respuesta cruda en cotización (lanza si no es legible). */
+  read(body: string): DolarBlueQuote
+}
+
+export const DOLARHOY_RATE_SOURCE: RateSource = {
+  id: 'dolarhoy',
+  name: DOLARHOY_SOURCE.name,
+  url: DOLARHOY_URL,
+  endpoints: DOLARHOY_PAGES,
+  read: parseDolarHoyBlue,
+}
+export const DOLARAPI_RATE_SOURCE: RateSource = {
+  id: 'dolarapi',
+  name: 'DolarAPI.com',
+  url: 'https://dolarapi.com/',
+  endpoints: ['https://dolarapi.com/v1/dolares/blue'],
+  read: parseDolarApi,
+}
+export const BLUELYTICS_RATE_SOURCE: RateSource = {
+  id: 'bluelytics',
+  name: 'Bluelytics',
+  url: 'https://bluelytics.com.ar/',
+  endpoints: ['https://api.bluelytics.com.ar/v2/latest'],
+  read: parseBluelytics,
+}
+
+/** Servidor: DolarHoy primero y las APIs públicas como respaldo. */
+export const SERVER_RATE_SOURCES: readonly RateSource[] = [DOLARHOY_RATE_SOURCE, DOLARAPI_RATE_SOURCE, BLUELYTICS_RATE_SOURCE]
+/** Navegador sin servidor: DolarHoy no se puede leer directo (CORS), así que solo las APIs públicas. */
+export const BROWSER_RATE_SOURCES: readonly RateSource[] = [DOLARAPI_RATE_SOURCE, BLUELYTICS_RATE_SOURCE]
+
+/** Una cotización con fecha más vieja que esto no se considera "actual" mientras otra fuente pueda mejorarla. */
+export const MAX_QUOTE_AGE_MS = 72 * 3_600_000
+const SOURCE_TIMEOUT_MS = 3_000
+
+export interface SourcedQuote {
+  quote: DolarBlueQuote
+  source: { name: string; url: string }
+}
+
+interface FetchOptions {
+  sources?: readonly RateSource[]
+  fetchImpl?: typeof fetch
+  timeoutMs?: number
+  signal?: AbortSignal | undefined
+  now?: () => number
+}
+
+async function request(fetchImpl: typeof fetch, url: string, timeoutMs: number, signal?: AbortSignal): Promise<string> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  const onAbort = () => controller.abort()
+  signal?.addEventListener('abort', onAbort)
+  try {
+    const response = await fetchImpl(url, {
+      headers: { Accept: 'application/json,text/html;q=0.9', 'Accept-Language': 'es-AR,es;q=0.9' },
+      signal: controller.signal,
+      cache: 'no-store',
+      redirect: 'follow',
+    })
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    return await response.text()
+  } finally {
+    clearTimeout(timer)
+    signal?.removeEventListener('abort', onAbort)
+  }
+}
 
 /**
- * Pide las páginas de DolarHoy.com (la portada y luego la del Dólar Blue) hasta obtener una lectura
- * válida. Los dos intentos suman menos que el límite de una función serverless.
+ * Consulta las fuentes en orden hasta obtener una cotización válida y actual. Si una fuente responde
+ * con un dato demasiado viejo se sigue con la siguiente; si ninguna tiene uno más reciente se devuelve
+ * el más nuevo encontrado (con su fecha real). Nunca inventa valores: si nada sirve, lanza el último error.
  */
-export async function fetchDolarHoyBlue(
-  fetchImpl: typeof fetch = fetch,
-  timeoutMs = PAGE_TIMEOUT_MS,
-  pages: readonly string[] = DOLARHOY_PAGES,
-): Promise<DolarBlueQuote> {
+export async function fetchBlueFromSources(options: FetchOptions = {}): Promise<SourcedQuote> {
+  const { sources = SERVER_RATE_SOURCES, fetchImpl = fetch, timeoutMs = SOURCE_TIMEOUT_MS, signal, now = Date.now } = options
+  let newestOld: (SourcedQuote & { time: number }) | null = null
   let last: DolarHoyError | null = null
-  for (const page of pages) {
-    try {
-      const response = await fetchImpl(page, {
-        headers: { Accept: 'text/html,application/xhtml+xml', 'Accept-Language': 'es-AR,es;q=0.9' },
-        signal: AbortSignal.timeout(timeoutMs),
-        redirect: 'follow',
-      })
-      if (!response.ok) throw new Error(`HTTP ${response.status}`)
-      return parseDolarHoyBlue(await response.text())
-    } catch (error) {
-      last =
-        error instanceof DolarHoyError
-          ? error
-          : new DolarHoyError(
-              'source_unavailable',
-              `No se pudo consultar DolarHoy.com (${error instanceof Error ? error.message : 'error'}).`,
-            )
+
+  for (const source of sources) {
+    for (const endpoint of source.endpoints) {
+      if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
+      try {
+        const quote = source.read(await request(fetchImpl, endpoint, timeoutMs, signal))
+        const result = { quote, source: { name: source.name, url: source.url } }
+        const time = quote.updatedAt === null ? null : Date.parse(quote.updatedAt)
+        if (time === null || now() - time <= MAX_QUOTE_AGE_MS) return result
+        if (!newestOld || time > newestOld.time) newestOld = { ...result, time }
+      } catch (error) {
+        if (signal?.aborted) throw error
+        last =
+          error instanceof DolarHoyError
+            ? error
+            : error instanceof SyntaxError
+              ? new DolarHoyError('parse_failed', `${source.name} devolvió una respuesta ilegible.`)
+              : new DolarHoyError(
+                  'source_unavailable',
+                  `No se pudo consultar ${source.name} (${error instanceof Error ? error.message : 'error'}).`,
+                )
+      }
     }
   }
-  throw last ?? new DolarHoyError('source_unavailable', 'No se pudo consultar DolarHoy.com.')
+  if (newestOld) return { quote: newestOld.quote, source: newestOld.source }
+  throw last ?? new DolarHoyError('source_unavailable', 'No hay fuentes disponibles.')
+}
+
+/** Solo DolarHoy.com (sus páginas, en orden). */
+export async function fetchDolarHoyBlue(
+  fetchImpl: typeof fetch = fetch,
+  timeoutMs = SOURCE_TIMEOUT_MS,
+  pages: readonly string[] = DOLARHOY_PAGES,
+): Promise<DolarBlueQuote> {
+  const { quote } = await fetchBlueFromSources({
+    sources: [{ ...DOLARHOY_RATE_SOURCE, endpoints: pages }],
+    fetchImpl,
+    timeoutMs,
+  })
+  return quote
 }
 
 /* ── Función serverless (Vercel) ────────────────────────────────────────── */
@@ -215,11 +340,11 @@ export default async function handler(req: Req, res: Res): Promise<void> {
     return
   }
   try {
-    const quote = await fetchDolarHoyBlue()
+    const { quote, source } = await fetchBlueFromSources()
     // La CDN de Vercel sirve la misma lectura 60 s (y hasta 5 min mientras revalida): no se golpea a
-    // dolarhoy.com en cada visita.
+    // las fuentes en cada visita.
     res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=300')
-    res.status(200).json({ ...quote, fetchedAt: new Date().toISOString(), source: DOLARHOY_SOURCE })
+    res.status(200).json({ ...quote, fetchedAt: new Date().toISOString(), source })
   } catch (error) {
     const code = error instanceof DolarHoyError ? error.code : 'source_unavailable'
     res.setHeader('Cache-Control', 'no-store')

@@ -34,13 +34,17 @@ El saldo nunca se guarda: se deriva de los movimientos `COMPLETED`.
 - Cuentas múltiples: `Transaction.accountId` y `computeBalance(tx, accountId)` ya existen.
 - Producción: `/api/dolar-blue` es una función de Vercel (`api/dolar-blue.ts`); en `vite dev`/`vite preview` lo sirve el plugin `server/ratesApi.ts` con la misma lectura.
 
-## Despliegue (Vercel) y Dólar Blue
+## Tasas de conversión (Dólar Blue) — sin configuración
 
-1. En vercel.com → *Add New Project* → importar este repositorio (rama a publicar). Framework: Vite (lo define `vercel.json`).
-2. **No hace falta ninguna variable de entorno.** `api/dolar-blue.ts` se publica solo como función (Node, `maxDuration` 15 s), lee DolarHoy.com del lado del servidor y la app lo consume en `/api/dolar-blue` (mismo origen: sin CORS).
-3. Verificación después del deploy: abrir `https://TU-DOMINIO/api/dolar-blue`. Debe devolver JSON con `buy`, `sell`, `updatedAt`, `fetchedAt` y `source` (`DolarHoy.com`). Si devuelve `502 {"error":"source_unavailable"|"parse_failed"}`, DolarHoy no respondió o cambió su HTML (ver los logs de la función en Vercel → *Logs*); la app sigue mostrando la última cotización válida guardada.
-4. Si la app se sirve desde OTRO dominio que la función, definir en el build `VITE_RATES_ENDPOINT=https://TU-DOMINIO-VERCEL/api/dolar-blue` (la función ya responde con CORS abierto).
+La cotización se obtiene sola, sin variables de entorno ni pasos en el hosting. Orden de fuentes:
 
-La lectura usa la estructura actual de DolarHoy (`.title a[href="/cotizaciondolarblue"]` + `.values .compra/.venta .val` + `.update`), con la portada y la página `/cotizaciondolarblue` como fuentes, y un respaldo por texto. Cubierta por `server/dolarhoy.test.ts`.
+1. **Servidor propio** `/api/dolar-blue` (si existe: `npm run dev`, `npm run preview` o Vercel): lee **DolarHoy.com** (portada y `/cotizaciondolarblue`) y, si falla, **DolarAPI.com** y **Bluelytics**.
+2. **Directo desde el navegador** (hosting estático, sin servidor): **DolarAPI.com** y, si falla, **Bluelytics** (APIs públicas con CORS).
+
+Siempre se guarda la última cotización válida en el dispositivo: si todas las fuentes fallan se muestra esa, con su fecha y fuente. Se actualiza al abrir la app, cada 30 minutos y al volver a la pestaña. Un dato con más de 72 h se descarta mientras otra fuente tenga uno más reciente. Nunca hay valores de ejemplo en producción.
+
+- Lectura y respaldo: `api/dolar-blue.ts` (autocontenido; es además la función de Vercel). Navegador: `src/services/liveRateProvider.ts`. Caché: `src/services/rateCache.ts`.
+- Opcional: `VITE_RATES_ENDPOINT` apunta la app a otro servidor propio (la función responde con CORS abierto).
+- Despliegue en Vercel: importar el repositorio y *Deploy* (no hay nada más que configurar). Cualquier otro hosting estático (Netlify, GitHub Pages, un `dist/` subido a un servidor) también funciona: la cotización llega por las fuentes públicas.
 
 La app usa HTTPS, requisito de la PWA y del cifrado del PIN (`crypto.subtle`).

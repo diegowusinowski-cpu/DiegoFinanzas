@@ -145,7 +145,7 @@ describe('createRatesMiddleware', () => {
 
   it('responde el JSON con la fuente y cachea 60 s', async () => {
     let clock = 1_000
-    const quote = vi.fn(async () => ({ buy: 1385, sell: 1405, updatedAt: null }))
+    const quote = vi.fn(async () => ({ quote: { buy: 1385, sell: 1405, updatedAt: null }, source: { name: 'DolarHoy.com', url: 'https://dolarhoy.com/' } }))
     const mw = createRatesMiddleware(quote, () => clock)
 
     const first = await run(mw)
@@ -170,8 +170,11 @@ describe('createRatesMiddleware', () => {
   })
 
   it('deja pasar otras rutas y rechaza métodos no GET', async () => {
-    const mw = createRatesMiddleware(async () => ({ buy: 1, sell: 1, updatedAt: null }))
+    const mw = createRatesMiddleware(async () => ({ quote: { buy: 1, sell: 1, updatedAt: null }, source: { name: 'x', url: 'x' } }))
     expect((await run(mw, '/otra')).nextCalled).toBe(true)
+    // El módulo fuente que sirve `vite dev` (`/api/dolar-blue.ts`) no se confunde con la API.
+    expect((await run(mw, '/api/dolar-blue.ts')).nextCalled).toBe(true)
+    expect((await run(mw, '/api/dolar-blue?x=1')).nextCalled).toBe(false)
     expect((await run(mw, '/api/dolar-blue', 'POST')).status).toBe(405)
   })
 })

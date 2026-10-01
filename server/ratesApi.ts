@@ -1,12 +1,12 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Plugin } from 'vite'
-import { DOLARHOY_SOURCE, DolarHoyError, fetchDolarHoyBlue, setCors, type DolarBlueQuote } from './dolarhoy.ts'
+import { DolarHoyError, fetchBlueFromSources, setCors, type SourcedQuote } from './dolarhoy.ts'
 
 const CACHE_TTL_MS = 60_000
 const ROUTE = '/api/dolar-blue'
 
 interface CacheEntry {
-  quote: DolarBlueQuote
+  result: SourcedQuote
   fetchedAt: string
   expires: number
 }
@@ -21,14 +21,14 @@ function sendJson(res: ServerResponse, status: number, body: unknown): void {
   res.end(JSON.stringify(body))
 }
 
-export function createRatesMiddleware(fetchQuote = fetchDolarHoyBlue, now = Date.now): Middleware {
+export function createRatesMiddleware(fetchQuote: () => Promise<SourcedQuote> = () => fetchBlueFromSources(), now = Date.now): Middleware {
   let cache: CacheEntry | null = null
   let inflight: Promise<CacheEntry> | null = null
 
   const load = (): Promise<CacheEntry> => {
     inflight ??= fetchQuote()
-      .then((quote) => {
-        cache = { quote, fetchedAt: new Date(now()).toISOString(), expires: now() + CACHE_TTL_MS }
+      .then((result) => {
+        cache = { result, fetchedAt: new Date(now()).toISOString(), expires: now() + CACHE_TTL_MS }
         return cache
       })
       .finally(() => {
@@ -38,7 +38,9 @@ export function createRatesMiddleware(fetchQuote = fetchDolarHoyBlue, now = Date
   }
 
   return (req, res, next) => {
-    if (!req.url?.split('?')[0]?.startsWith(ROUTE)) return next()
+    // Ruta exacta: en `vite dev` el módulo `/api/dolar-blue.ts` (lo importa el navegador) no es esta API.
+    const path = req.url?.split('?')[0]
+    if (path !== ROUTE && path !== `${ROUTE}/`) return next()
     if (req.method === 'OPTIONS') {
       setCors(res)
       res.statusCode = 204
@@ -47,7 +49,7 @@ export function createRatesMiddleware(fetchQuote = fetchDolarHoyBlue, now = Date
     if (req.method !== 'GET') return sendJson(res, 405, { error: 'method_not_allowed' })
 
     const respond = (entry: CacheEntry) =>
-      sendJson(res, 200, { ...entry.quote, fetchedAt: entry.fetchedAt, source: DOLARHOY_SOURCE })
+      sendJson(res, 200, { ...entry.result.quote, fetchedAt: entry.fetchedAt, source: entry.result.source })
 
     if (cache && cache.expires > now()) return respond(cache)
     load().then(respond, (error: unknown) => {

@@ -4,6 +4,7 @@ import type { Repositories } from '@/data/repositories'
 import type { AuthService } from './auth'
 import { DolarHoyRateProvider } from './dolarHoyProvider'
 import { newId } from './ids'
+import { LiveRateProvider } from './liveRateProvider'
 import { LocalPinAuthService } from './localPinAuth'
 import { CachingRateProvider } from './rateCache'
 import type { ExchangeRateProvider } from './rates'
@@ -38,7 +39,7 @@ export function createAppServices(): AppServices {
   return {
     repositories: createLocalRepositories(storage),
     auth: new LocalPinAuthService(storage),
-    rates: new CachingRateProvider(new DolarHoyRateProvider(), storage),
+    rates: new CachingRateProvider(new LiveRateProvider(new DolarHoyRateProvider()), storage),
     receipts: new CanvasReceiptService(),
     sharing: new BrowserShareService(),
     session,
