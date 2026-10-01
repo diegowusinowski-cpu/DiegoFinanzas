@@ -12,14 +12,22 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "e2e": "node scripts/e2e-smoke.mjs"
+    "e2e": "node scripts/e2e-smoke.mjs",
+    "db:migrate": "node scripts/db.mjs migrate",
+    "db:status": "node scripts/db.mjs status",
+    "db:clean": "node scripts/db.mjs clean",
+    "db:delete": "node scripts/db.mjs delete",
+    "db:reset-pin": "node scripts/db.mjs reset-pin",
+    "db:list": "node scripts/db.mjs list"
   },
   "dependencies": {
     "@fontsource-variable/dm-sans": "^5.3.0",
+    "@neondatabase/serverless": "^1.1.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@eslint/js": "^10.0.1",
     "@tailwindcss/vite": "^4.3.3",
     "@testing-library/jest-dom": "^7.0.1",

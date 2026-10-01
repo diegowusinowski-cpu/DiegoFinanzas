@@ -3,6 +3,8 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 import { VitePWA } from 'vite-plugin-pwa'
+import { dwfApi } from './server/dwfApi.ts'
+import { SECURITY_HEADERS } from './server/securityHeaders.ts'
 import { dwfRatesApi } from './server/ratesApi.ts'
 
 export default defineConfig({
@@ -10,6 +12,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     dwfRatesApi(),
+    dwfApi(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
@@ -41,7 +44,12 @@ export default defineConfig({
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
   server: { host: true, allowedHosts: true },
-  preview: { host: true, allowedHosts: true },
+  preview: {
+    host: true,
+    allowedHosts: true,
+    // El build se prueba con las mismas cabeceras de seguridad que tendrá en producción.
+    headers: Object.fromEntries(SECURITY_HEADERS.map((h) => [h.key, h.value])),
+  },
   test: {
     environment: 'jsdom',
     globals: true,

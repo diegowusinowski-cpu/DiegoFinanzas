@@ -5,10 +5,12 @@ import { useServices } from './ServicesContext'
 
 const SESSION_KEY = 'dwf.session'
 
-export type AuthStatus = 'loading' | 'setup' | 'locked' | 'unlocked'
+export type AuthStatus = 'loading' | 'setup' | 'locked' | 'unlocked' | 'unavailable'
 
 interface AuthContextValue {
   status: AuthStatus
+  /** Por qué no se pudo conectar (solo con `status === 'unavailable'`). */
+  errorMessage: string | null
   profile: Profile | null
   unlock(pin: string): Promise<VerifyResult>
   enroll(phone: string, pin: string): Promise<void>
@@ -23,15 +25,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { auth, session } = useServices()
   const [status, setStatus] = useState<AuthStatus>('loading')
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
-    void auth.getProfile().then((found) => {
-      if (cancelled) return
-      setProfile(found)
-      if (!found) setStatus('setup')
-      else setStatus(session.getItem(SESSION_KEY) === '1' ? 'unlocked' : 'locked')
-    })
+    void auth.getProfile().then(
+      (found) => {
+        if (cancelled) return
+        setProfile(found)
+        if (!found) setStatus('setup')
+        else setStatus(session.getItem(SESSION_KEY) === '1' ? 'unlocked' : 'locked')
+      },
+      (error: unknown) => {
+        if (cancelled) return
+        setErrorMessage(error instanceof Error ? error.message : 'No se pudo conectar con el servidor.')
+        setStatus('unavailable')
+      },
+    )
     return () => {
       cancelled = true
     }
@@ -61,8 +71,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const lock = useCallback(() => {
     session.removeItem(SESSION_KEY)
+    void auth.signOut?.()
     setStatus('locked')
-  }, [session])
+  }, [auth, session])
 
   const resetAccess = useCallback(async () => {
     await auth.resetAccess()
@@ -74,8 +85,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const getLockedUntil = useCallback(() => auth.getLockedUntil(), [auth])
 
   const value = useMemo(
-    () => ({ status, profile, unlock, enroll, lock, resetAccess, getLockedUntil }),
-    [status, profile, unlock, enroll, lock, resetAccess, getLockedUntil],
+    () => ({ status, errorMessage, profile, unlock, enroll, lock, resetAccess, getLockedUntil }),
+    [status, errorMessage, profile, unlock, enroll, lock, resetAccess, getLockedUntil],
   )
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

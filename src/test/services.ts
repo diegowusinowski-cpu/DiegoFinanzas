@@ -65,6 +65,7 @@ export function createTestServices(over: Partial<AppServices> = {}): AppServices
     sharing: fakeSharing(false).service,
     session: new MemoryStorage(),
     persistent: true,
+    dataMode: 'database',
     now: () => new Date(base + tick++ * 1000),
     newId: () => `id-${++id}`,
     ...over,

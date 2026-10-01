@@ -34,7 +34,14 @@ async function addMovement(page, kind, { amount, concept, category, date, method
   await page.getByTestId('balance').waitFor()
 }
 
+/** Vacía la base de pruebas (solo existe con DWF_E2E=1 en `vite preview`; nunca en producción). */
+async function resetDatabase() {
+  const response = await fetch(`${BASE_URL}/api/dwf-test-reset`, { method: 'POST' })
+  assert.equal(response.status, 200, 'No se pudo reiniciar la base de pruebas (¿falta DWF_E2E=1 y DWF_DB=memory en vite preview?)')
+}
+
 async function run(name, device, { mockRate } = {}) {
+  await resetDatabase()
   const context = await browser.newContext({ ...device, locale: 'es-AR', timezoneId: 'America/Argentina/Buenos_Aires' })
   const page = await context.newPage()
   const errors = []
@@ -285,6 +292,9 @@ async function run(name, device, { mockRate } = {}) {
   assert.equal(await page.getByTestId('balance').textContent(), '$ 6.624,50')
   log(`[${name}] datos persistidos, bloqueo, PIN incorrecto y PIN correcto`)
 
+  // Con base de datos real, los datos NO viven en el navegador (localStorage solo guarda la caché de la cotización).
+  const localKeys = await page.evaluate(() => Object.keys(localStorage))
+  assert.deepEqual(localKeys.filter((k) => k.startsWith('dwf.v1.') && k !== 'dwf.v1.rate-usd-blue'), [], 'no debe haber datos en localStorage')
   const stored = await page.evaluate(() => JSON.stringify({ ...localStorage }))
   assert.ok(!stored.includes('"1234"') && !/pin"?:\s*"?1234/.test(stored), 'el PIN no debe estar en texto plano')
   assert.ok(!(await page.locator('body').innerText()).match(/ARQ/i), 'no debe aparecer ARQ')

@@ -26,6 +26,8 @@ export interface AuthService {
   getLockedUntil(): Promise<number | null>
   /** Borra teléfono y PIN de este dispositivo (no toca los movimientos). */
   resetAccess(): Promise<void>
+  /** Cierra la sesión en el servidor (solo si el acceso se verifica allí). */
+  signOut?(): Promise<void>
 }
 
 export function isValidPin(pin: string): boolean {

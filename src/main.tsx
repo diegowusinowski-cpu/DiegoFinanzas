@@ -8,18 +8,21 @@ import { App } from '@/ui/App'
 import { ErrorBoundary } from '@/ui/components/ErrorBoundary'
 import { ToastProvider } from '@/ui/components/Toast'
 
-const services = createAppServices()
+async function start() {
+  const services = await createAppServices()
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <ErrorBoundary>
+        <ServicesProvider services={services}>
+          <ToastProvider>
+            <AuthProvider>
+              <App />
+            </AuthProvider>
+          </ToastProvider>
+        </ServicesProvider>
+      </ErrorBoundary>
+    </StrictMode>,
+  )
+}
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <ErrorBoundary>
-      <ServicesProvider services={services}>
-        <ToastProvider>
-          <AuthProvider>
-            <App />
-          </AuthProvider>
-        </ToastProvider>
-      </ServicesProvider>
-    </ErrorBoundary>
-  </StrictMode>,
-)
+void start()

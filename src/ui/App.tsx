@@ -17,8 +17,9 @@ import { SavingsScreen } from './savings/SavingsScreen'
 import { MovementsScreen } from './screens/MovementsScreen'
 
 export function App() {
-  const { status } = useAuth()
+  const { status, errorMessage } = useAuth()
   if (status === 'loading') return <Splash />
+  if (status === 'unavailable') return <ConnectionProblem message={errorMessage} />
   if (status === 'unlocked') {
     return (
       <FinanceProvider>
@@ -27,6 +28,19 @@ export function App() {
     )
   }
   return <LoginScreen />
+}
+
+/** No hay conexión con el servidor o la base de datos: no se muestra ni se guarda nada hasta que vuelva. */
+function ConnectionProblem({ message }: { message: string | null }) {
+  return (
+    <main className="mx-auto grid min-h-dvh max-w-md place-items-center bg-canvas px-gutter">
+      <Card className="flex w-full flex-col items-start gap-3 p-6" role="alert">
+        <h1 className="type-title">No pudimos conectar</h1>
+        <p className="text-body-sm text-fg-soft">{message}</p>
+        <Button onClick={() => window.location.reload()}>Reintentar</Button>
+      </Card>
+    </main>
+  )
 }
 
 function Splash() {
@@ -38,7 +52,7 @@ function Splash() {
 }
 
 function Shell() {
-  const { persistent } = useServices()
+  const { persistent, dataMode } = useServices()
   const { status, errorMessage, reload } = useFinance()
   const [tab, setTab] = useState<Tab>('home')
   const [flowType, setFlowType] = useState<TransactionType | null>(null)
@@ -50,6 +64,12 @@ function Shell() {
       {!persistent ? (
         <p role="status" className="mx-gutter mt-safe mb-3 rounded-card bg-warning-bg p-4 text-body-sm text-warning">
           Tu navegador no permite guardar datos: los movimientos se perderán al cerrar esta pestaña.
+        </p>
+      ) : null}
+
+      {dataMode === 'local' ? (
+        <p role="status" className="mx-gutter mt-safe mb-3 rounded-card bg-warning-bg p-4 text-body-sm text-warning">
+          Modo local: este sitio no tiene base de datos conectada. Lo que cargues se guarda solo en este navegador.
         </p>
       ) : null}
 
