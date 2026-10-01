@@ -144,9 +144,6 @@ async function run(name, device, { mockRate } = {}) {
   await page.getByRole('radio', { name: 'Todos' }).click()
   log(`[${name}] Movimientos: búsqueda, filtro, combinación y detalle`)
   await page.screenshot({ path: `${OUT}/${name}-3-movimientos.png`, fullPage: true })
-  await page.getByRole('button', { name: 'Más', exact: true }).click()
-  await page.getByRole('heading', { name: 'Más' }).waitFor()
-  await page.screenshot({ path: `${OUT}/${name}-4-mas.png`, fullPage: true })
   await page.getByRole('button', { name: 'Inicio', exact: true }).click()
   await page.getByTestId('balance').waitFor()
   const nav = page.getByRole('navigation', { name: 'Navegación principal' })
@@ -159,7 +156,7 @@ async function run(name, device, { mockRate } = {}) {
   await page.keyboard.press('Escape')
   await nav.getByRole('button', { name: 'Inicio', exact: true }).click()
   await page.getByTestId('balance').waitFor()
-  log(`[${name}] navegación Inicio / Movimientos / + (Ingreso·Gasto) / Préstamos / Más`)
+  log(`[${name}] navegación Inicio / Movimientos / + (Ingreso·Gasto) / Préstamos / Ahorros`)
 
   // Préstamos (pestaña): calculadora → nuevo préstamo → comprobante → cobro de cuota → saldo
   await nav.getByRole('button', { name: 'Préstamos', exact: true }).click()
@@ -220,6 +217,7 @@ async function run(name, device, { mockRate } = {}) {
   await nav.getByRole('button', { name: 'Ahorros', exact: true }).click()
   await page.getByRole('heading', { name: 'Ahorros', level: 1 }).waitFor()
   assert.equal(await nav.getByRole('button', { name: 'Ahorros', exact: true }).getAttribute('aria-current'), 'page')
+  assert.equal(await nav.getByRole('button').count(), 5)
   assert.equal(await page.evaluate(() => [...document.querySelectorAll('nav button')].filter((b) => b.scrollWidth > b.clientWidth + 0.5).length), 0)
   await page.screenshot({ path: `${OUT}/${name}-5d-ahorros.png` })
   await page.getByRole('button', { name: /^Nuevo frasco/ }).click()
@@ -252,8 +250,8 @@ async function run(name, device, { mockRate } = {}) {
   await page.reload()
   await page.getByTestId('balance').waitFor()
   assert.equal(await page.getByTestId('balance').textContent(), '$ 6.624,50')
-  await page.getByRole('button', { name: 'Más', exact: true }).click()
-  await page.getByRole('button', { name: 'Bloquear DWF' }).click()
+  await page.evaluate(() => sessionStorage.clear()) // sesión nueva: la app vuelve a pedir el PIN
+  await page.reload()
   await page.getByRole('heading', { name: 'Bienvenido de nuevo, Diego' }).waitFor()
   assert.ok(await page.getByText('+54 •••••••• 789').isVisible())
   await page.screenshot({ path: `${OUT}/${name}-6-acceso.png` })

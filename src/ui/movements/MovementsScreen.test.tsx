@@ -266,8 +266,6 @@ describe('Movimientos: navegación', () => {
     const nav = screen.getByRole('navigation', { name: 'Navegación principal' })
     await user.click(within(nav).getByRole('button', { name: 'Movimientos' }))
     expect(await screen.findByRole('heading', { name: 'Movimientos', level: 1 })).toBeInTheDocument()
-    await user.click(within(nav).getByRole('button', { name: 'Más' }))
-    expect(screen.getByRole('heading', { name: 'Más' })).toBeInTheDocument()
     await user.click(within(nav).getByRole('button', { name: 'Inicio' }))
     expect(screen.getByTestId('balance')).toBeInTheDocument()
   })

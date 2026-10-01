@@ -1,7 +1,7 @@
 import { cx } from '../cx'
 import { Icon, type IconName } from './Icon'
 
-export type Tab = 'home' | 'movements' | 'loans' | 'savings' | 'more'
+export type Tab = 'home' | 'movements' | 'loans' | 'savings'
 
 interface BottomNavProps {
   active: Tab
@@ -14,7 +14,6 @@ const ITEMS: Array<{ tab: Tab; label: string; icon: IconName }> = [
   { tab: 'movements', label: 'Movimientos', icon: 'list' },
   { tab: 'loans', label: 'Préstamos', icon: 'loan' },
   { tab: 'savings', label: 'Ahorros', icon: 'jar' },
-  { tab: 'more', label: 'Más', icon: 'more' },
 ]
 
 /**
@@ -49,20 +48,19 @@ export function BottomNav({ active, onSelect, onAdd }: BottomNavProps) {
         className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-canvas via-canvas/80 to-transparent"
       />
       <div className="relative px-4 pb-safe">
-        <div className="grid grid-cols-[1fr_1fr_auto_1fr_1fr_1fr] items-center gap-1 rounded-pill border border-line bg-nav p-1 shadow-float backdrop-blur-xl">
+        <div className="grid grid-cols-[1fr_1fr_auto_1fr_1fr] items-center gap-1 rounded-pill border border-line bg-nav p-1 shadow-float backdrop-blur-xl">
           {item(ITEMS[0]!)}
           {item(ITEMS[1]!)}
           <button
             type="button"
             onClick={onAdd}
             aria-label="Registrar movimiento"
-            className="interactive mx-1 grid size-control-md place-items-center rounded-pill bg-action text-on-action hover:bg-action-hover active:bg-action-pressed"
+            className="interactive mx-2 grid size-control-md place-items-center rounded-pill bg-action text-on-action hover:bg-action-hover active:bg-action-pressed"
           >
             <Icon name="plus" size="lg" />
           </button>
           {item(ITEMS[2]!)}
           {item(ITEMS[3]!)}
-          {item(ITEMS[4]!)}
         </div>
       </div>
     </nav>

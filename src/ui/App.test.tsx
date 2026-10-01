@@ -1,15 +1,18 @@
 import { screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { addMovement, balance, firstRun, mount, pressPin, setupUser } from '@/test/flowHelpers'
+import type { AppServices } from '@/services/container'
 import { createTestServices, fakeRates } from '@/test/services'
 
 afterEach(() => {
   vi.useRealTimers()
 })
 
-async function lock(user: ReturnType<typeof setupUser>) {
-  await user.click(screen.getByRole('button', { name: 'Más' }))
-  await user.click(screen.getByRole('button', { name: 'Bloquear DWF' }))
+/** Vuelve a abrir la app con una sesión nueva (sin sesión activa: pide el PIN). */
+function reopenLocked(services: AppServices) {
+  services.session.removeItem('dwf.session')
+  document.body.innerHTML = ''
+  mount(services)
 }
 
 describe('Acceso', () => {
@@ -41,7 +44,7 @@ describe('Acceso', () => {
   it('muestra la pantalla de acceso con saludo, teléfono oculto, 4 indicadores y opciones', async () => {
     const user = setupUser()
     const services = await firstRun(user)
-    await lock(user)
+    reopenLocked(services)
 
     expect(await screen.findByRole('heading', { name: 'Bienvenido de nuevo, Diego' })).toBeInTheDocument()
     expect(screen.getByText('DWF')).toBeInTheDocument()
@@ -58,8 +61,8 @@ describe('Acceso', () => {
 
   it('PIN incorrecto muestra error; el correcto entra', async () => {
     const user = setupUser()
-    await firstRun(user)
-    await lock(user)
+    const services = await firstRun(user)
+    reopenLocked(services)
     await screen.findByRole('heading', { name: /Bienvenido de nuevo/ })
 
     await pressPin(user, '0000')
@@ -70,8 +73,8 @@ describe('Acceso', () => {
 
   it('bloquea el teclado tras 5 intentos fallidos', async () => {
     const user = setupUser()
-    await firstRun(user)
-    await lock(user)
+    const services = await firstRun(user)
+    reopenLocked(services)
     await screen.findByRole('heading', { name: /Bienvenido de nuevo/ })
     for (const left of ['4 intentos', '3 intentos', '2 intentos', '1 intento']) {
       await pressPin(user, '9999')
@@ -87,7 +90,7 @@ describe('Acceso', () => {
     const services = await firstRun(user)
     await addMovement(user, 'Ingreso', { category: 'Trabajo en relación de dependencia', amount: '1000', concept: 'Cobro' })
     await screen.findByText('Cobro')
-    await lock(user)
+    reopenLocked(services)
 
     await user.click(await screen.findByRole('button', { name: 'No recuerdo mi contraseña' }))
     const dialog = await screen.findByRole('dialog', { name: 'Recuperar acceso' })
@@ -269,7 +272,7 @@ describe('Tasas de conversión', () => {
 })
 
 describe('Navegación', () => {
-  it('cambia entre Inicio, Movimientos, Préstamos, Ahorros y Más', async () => {
+  it('cambia entre Inicio, Movimientos, Préstamos y Ahorros', async () => {
     const user = setupUser()
     await firstRun(user)
     const nav = screen.getByRole('navigation', { name: 'Navegación principal' })
@@ -279,7 +282,6 @@ describe('Navegación', () => {
       'Registrar movimiento',
       'Préstamos',
       'Ahorros',
-      'Más',
     ])
 
     await user.click(within(nav).getByRole('button', { name: 'Movimientos' }))
@@ -298,10 +300,7 @@ describe('Navegación', () => {
     expect(within(nav).getByRole('button', { name: 'Ahorros' })).toHaveAttribute('aria-current', 'page')
     expect(within(nav).getByRole('button', { name: 'Préstamos' })).not.toHaveAttribute('aria-current')
     expect(screen.getByRole('button', { name: /^Nuevo frasco/ })).toBeInTheDocument()
-
-    await user.click(within(nav).getByRole('button', { name: 'Más' }))
-    expect(screen.getByRole('heading', { name: 'Más' })).toBeInTheDocument()
-    expect(within(nav).getByRole('button', { name: 'Más' })).toHaveAttribute('aria-current', 'page')
+    expect(within(nav).queryByRole('button', { name: 'Más' })).not.toBeInTheDocument()
 
     await user.click(within(nav).getByRole('button', { name: 'Inicio' }))
     expect(screen.getByTestId('balance')).toBeInTheDocument()
