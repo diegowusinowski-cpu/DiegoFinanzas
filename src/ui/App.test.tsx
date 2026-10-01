@@ -114,7 +114,7 @@ describe('Dashboard', () => {
     expect(screen.getByRole('button', { name: 'Ingreso' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Recordatorios' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Últimos movimientos' })).toBeInTheDocument()
-    expect(screen.getByText('Dieto Wusinowski Finanzas')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Últimos servicios' })).toBeInTheDocument()
     expect(document.body.textContent).not.toMatch(/ARQ/i)
   })
 
@@ -253,33 +253,68 @@ describe('Recordatorios', () => {
   })
 })
 
-describe('Tasas de conversión', () => {
-  it('muestra compra y venta del Dólar Blue con la fuente', async () => {
+describe('Inicio: saldo en pesos y dólares', () => {
+  const usd = () => screen.getByTestId('balance-usd')
+
+  it('muestra solo Recordatorios, Últimos movimientos y Últimos servicios, en ese orden, sin tasas', async () => {
     const user = setupUser()
     await firstRun(user)
-    expect(await screen.findByText('Dólar Blue / ARS')).toBeInTheDocument()
-    expect(await screen.findByTestId('rate-buy')).toHaveTextContent('$ 1.385')
-    expect(screen.getByTestId('rate-sell')).toHaveTextContent('$ 1.405,5')
-    expect(screen.getByText(/Actualizado/)).toHaveTextContent('DolarHoy.com')
+    const headings = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)
+    expect(headings).toEqual(['Saldo disponible', 'Recordatorios', 'Últimos movimientos', 'Últimos servicios'])
+    expect(screen.queryByText(/Tasas de conversión/)).not.toBeInTheDocument()
+    expect(screen.queryByTestId('rate-buy')).not.toBeInTheDocument()
+    expect(screen.queryByText('Dieto Wusinowski Finanzas')).not.toBeInTheDocument()
   })
 
-  it('si la fuente no responde muestra indisponibilidad y el resto sigue funcionando', async () => {
+  it('la página principal es el saldo en pesos y hay un indicador para deslizar al dólar', async () => {
+    const user = setupUser()
+    await firstRun(user)
+    expect(screen.getByTestId('balance')).toHaveTextContent('$ 0,00')
+    const group = screen.getByRole('group', { name: 'Elegir moneda' })
+    expect(within(group).getByRole('button', { name: 'Saldo en pesos' })).toHaveAttribute('aria-current', 'true')
+    expect(within(group).getByRole('button', { name: 'Saldo en dólares' })).not.toHaveAttribute('aria-current')
+    await user.click(within(group).getByRole('button', { name: 'Saldo en dólares' }))
+    expect(within(group).getByRole('button', { name: 'Saldo en dólares' })).toHaveAttribute('aria-current', 'true')
+    await user.click(within(group).getByRole('button', { name: 'Saldo en pesos' }))
+    expect(within(group).getByRole('button', { name: 'Saldo en pesos' })).toHaveAttribute('aria-current', 'true')
+  })
+
+  it('el saldo en USD sale de los pesos y la cotización venta disponible (sin valores fijos)', async () => {
+    const user = setupUser()
+    await firstRun(user)
+    await addMovement(user, 'Ingreso', { category: 'Trabajo en relación de dependencia', amount: '14055', concept: 'Sueldo' })
+    expect(balance()).toBe('$ 14.055,00')
+    // SAMPLE_RATE: venta $1.405,5 → 14.055 / 1.405,5 = 10 dólares.
+    await waitFor(() => expect(usd()).toHaveTextContent('US$ 10,00'))
+  })
+
+  it('usa la cotización que entrega la fuente configurada: otra cotización, otro resultado', async () => {
+    const user = setupUser()
+    const rates = { getUsdBlue: async () => ({ ...SAMPLE_RATE, sell: 2000 }) }
+    await firstRun(user, createTestServices({ rates }))
+    await addMovement(user, 'Ingreso', { category: 'Trabajo en relación de dependencia', amount: '10000', concept: 'Sueldo' })
+    await waitFor(() => expect(usd()).toHaveTextContent('US$ 5,00'))
+  })
+
+  it('suma lo registrado en dólares al equivalente de los pesos', async () => {
+    const user = setupUser()
+    await firstRun(user)
+    await addMovement(user, 'Ingreso', { category: 'Trabajo en relación de dependencia', amount: '1405,5', concept: 'Pesos' })
+    await addMovement(user, 'Ingreso', { country: 'Estados Unidos', category: 'Trabajo en relación de dependencia', amount: '5', concept: 'Dólares' })
+    await waitFor(() => expect(usd()).toHaveTextContent('US$ 6,00'))
+    expect(balance()).toBe('$ 1.405,50')
+  })
+
+  it('sin cotización disponible el USD dice "No disponible" y no inventa valores', async () => {
     const user = setupUser()
     await firstRun(user, createTestServices({ rates: fakeRates('unavailable') }))
-    expect(await screen.findByText(/cotización no está disponible/)).toBeInTheDocument()
-    expect(screen.queryByTestId('rate-buy')).not.toBeInTheDocument()
-    await addMovement(user, 'Ingreso', { category: 'Préstamos', amount: '100', concept: 'Igual funciona' })
-    expect(await screen.findByText('Igual funciona')).toBeInTheDocument()
-    expect(balance()).toBe('$ 100,00')
+    await addMovement(user, 'Ingreso', { category: 'Trabajo en relación de dependencia', amount: '1000', concept: 'Sueldo' })
+    await waitFor(() => expect(usd()).toHaveTextContent('No disponible'))
+    expect(usd()).not.toHaveTextContent('US$')
+    expect(balance()).toBe('$ 1.000,00') // los pesos siguen funcionando
   })
 
-  it('muestra la fecha/hora de actualización de la fuente', async () => {
-    const user = setupUser()
-    await firstRun(user)
-    expect(await screen.findByTestId('rate-updated')).toHaveTextContent(/^Actualizado \d{2}\/\d{2}\/2026 \d{2}:\d{2} · Fuente: DolarHoy\.com$/)
-  })
-
-  it('conserva la última cotización válida si la fuente deja de responder, con su fecha y un aviso', async () => {
+  it('usa la última cotización válida guardada si la fuente deja de responder', async () => {
     const storage = new MemoryStorage()
     let up = true
     const source = {
@@ -288,39 +323,91 @@ describe('Tasas de conversión', () => {
         throw new RateUnavailableError()
       },
     }
-    // Primera apertura: la fuente responde y la cotización queda guardada.
     const user = setupUser()
     const services = await firstRun(user, createTestServices({ rates: new CachingRateProvider(source, storage) }))
-    expect(await screen.findByTestId('rate-buy')).toHaveTextContent('$ 1.385')
-    expect(screen.queryByText(/No pudimos actualizar/)).not.toBeInTheDocument()
+    await addMovement(user, 'Ingreso', { category: 'Trabajo en relación de dependencia', amount: '14055', concept: 'Sueldo' })
+    await waitFor(() => expect(usd()).toHaveTextContent('US$ 10,00'))
     document.body.innerHTML = ''
 
-    // Segunda apertura con la fuente caída: se ve el último valor real, no un hueco ni un valor inventado.
     up = false
     mount({ ...services, rates: new CachingRateProvider(source, storage) })
-    expect(await screen.findByTestId('rate-buy')).toHaveTextContent('$ 1.385')
-    expect(screen.getByTestId('rate-sell')).toHaveTextContent('$ 1.405,5')
-    expect(await screen.findByText(/No pudimos actualizar/)).toBeInTheDocument()
-    expect(screen.getByTestId('rate-updated')).toHaveTextContent(/^Actualizado \d{2}\/\d{2}\/2026/)
-    expect(screen.queryByText(/cotización no está disponible/)).not.toBeInTheDocument()
-
-    // Al volver la fuente, "Reintentar" actualiza y desaparece el aviso.
-    up = true
-    await user.click(screen.getByRole('button', { name: 'Reintentar' }))
-    await waitFor(() => expect(screen.queryByText(/No pudimos actualizar/)).not.toBeInTheDocument())
+    await waitFor(() => expect(usd()).toHaveTextContent('US$ 10,00'))
   })
 
-  it('al abrir muestra al instante la cotización guardada y la actualiza con la de la fuente', async () => {
+  it('al abrir usa al instante la cotización guardada y luego la actualiza', async () => {
     const storage = new MemoryStorage()
-    const old = { ...SAMPLE_RATE, buy: 1300, sell: 1320 }
-    await new CachingRateProvider({ getUsdBlue: async () => old }, storage).getUsdBlue()
+    await new CachingRateProvider({ getUsdBlue: async () => ({ ...SAMPLE_RATE, sell: 1000 }) }, storage).getUsdBlue()
     let resolve: (value: typeof SAMPLE_RATE) => void = () => undefined
     const slow = { getUsdBlue: () => new Promise<typeof SAMPLE_RATE>((r) => (resolve = r)) }
     const user = setupUser()
     await firstRun(user, createTestServices({ rates: new CachingRateProvider(slow, storage) }))
-    expect(screen.getByTestId('rate-buy')).toHaveTextContent('$ 1.300')
+    await addMovement(user, 'Ingreso', { category: 'Trabajo en relación de dependencia', amount: '1405,5', concept: 'Sueldo' })
+    await waitFor(() => expect(usd()).toHaveTextContent('US$ 1,41')) // 1.405,5 / 1.000
     resolve(SAMPLE_RATE)
-    await waitFor(() => expect(screen.getByTestId('rate-buy')).toHaveTextContent('$ 1.385'))
+    await waitFor(() => expect(usd()).toHaveTextContent('US$ 1,00')) // 1.405,5 / 1.405,5
+  })
+
+  it('el botón de ocultar saldo oculta pesos y dólares', async () => {
+    const user = setupUser()
+    await firstRun(user)
+    await user.click(screen.getAllByRole('button', { name: 'Ocultar saldo' })[0]!)
+    expect(screen.getByTestId('balance')).toHaveTextContent('$ ••••••')
+    expect(usd()).toHaveTextContent('US$ ••••••')
+  })
+})
+
+describe('Inicio: últimos servicios', () => {
+  const services = () => screen.getByTestId('latest-services')
+
+  it('sin gastos de servicios muestra un estado vacío, sin datos de ejemplo', async () => {
+    const user = setupUser()
+    await firstRun(user)
+    expect(screen.getByText('Sin gastos de servicios')).toBeInTheDocument()
+    expect(screen.queryByTestId('latest-services')).not.toBeInTheDocument()
+  })
+
+  it('lista los gastos reales de servicios (por comercio o categoría) con nombre, fecha, importe y moneda', async () => {
+    const user = setupUser()
+    await firstRun(user)
+    await addMovement(user, 'Gasto', { category: 'Transporte y movilidad', amount: '2000', concept: 'Carga SUBE' })
+    await addMovement(user, 'Gasto', { category: 'Salidas y ocio', amount: '9999', concept: 'Cena con amigos' })
+    await addMovement(user, 'Gasto', { category: 'Suscripciones y tecnología', amount: '4500,5', concept: 'Netflix' })
+    await addMovement(user, 'Gasto', { category: 'Cuidado personal y compras', amount: '3000', concept: 'Mercado Libre auriculares' })
+    await addMovement(user, 'Gasto', { category: 'Suscripciones y tecnología', amount: '800', concept: 'Hosting personal' })
+    await addMovement(user, 'Ingreso', { category: 'Trabajo en relación de dependencia', amount: '50', concept: 'Reembolso Spotify' })
+
+    const rows = within(services()).getAllByRole('listitem')
+    // Más reciente primero; la cena (ocio) y el ingreso quedan afuera.
+    expect(rows.map((r) => r.querySelector('p.type-subheading')?.textContent)).toEqual(['Hosting personal', 'Mercado Libre', 'Netflix', 'SUBE'])
+    const netflix = rows[2]!
+    expect(netflix).toHaveTextContent('Netflix')
+    expect(netflix).toHaveTextContent('Hoy')
+    expect(netflix).toHaveTextContent('− $ 4.500,50')
+    expect(netflix).toHaveTextContent('ARS')
+    expect(within(services()).queryByText(/Cena/)).not.toBeInTheDocument()
+    expect(within(services()).queryByText(/Spotify/)).not.toBeInTheDocument()
+  })
+
+  it('muestra la moneda real del gasto', async () => {
+    const user = setupUser()
+    await firstRun(user)
+    await addMovement(user, 'Gasto', { country: 'Estados Unidos', category: 'Suscripciones y tecnología', amount: '15', concept: 'Spotify' })
+    const row = within(services()).getByRole('listitem')
+    expect(row).toHaveTextContent('Spotify')
+    expect(row).toHaveTextContent('− US$ 15,00')
+    expect(row).toHaveTextContent('USD')
+  })
+
+  it('un gasto de servicio anulado no aparece', async () => {
+    const user = setupUser()
+    const services = await firstRun(user)
+    await addMovement(user, 'Gasto', { category: 'Suscripciones y tecnología', amount: '100', concept: 'Netflix' })
+    const [t] = await services.repositories.transactions.list()
+    await services.repositories.transactions.update([{ ...t!, status: 'CANCELLED' }])
+    document.body.innerHTML = ''
+    mount(services)
+    await screen.findByTestId('balance')
+    expect(screen.getByText('Sin gastos de servicios')).toBeInTheDocument()
   })
 })
 

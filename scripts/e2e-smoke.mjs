@@ -40,6 +40,11 @@ async function run(name, device, { mockRate } = {}) {
   const errors = []
   page.on('pageerror', (e) => errors.push(String(e)))
   page.on('console', (m) => m.type() === 'error' && !/Failed to load resource/.test(m.text()) && errors.push(m.text()))
+  if (!mockRate) {
+    // Sin ninguna fuente de cotización (servidor propio y APIs públicas caídas).
+    await page.route('**/api/dolar-blue', (route) => route.fulfill({ status: 502, json: { error: 'source_unavailable' } }))
+    await page.route(/dolarapi\.com|bluelytics\.com\.ar/, (route) => route.abort())
+  }
   if (mockRate) {
     await page.route('**/api/dolar-blue', (route) =>
       route.fulfill({
@@ -94,16 +99,25 @@ async function run(name, device, { mockRate } = {}) {
   assert.equal(await page.getByTestId('balance').textContent(), '$ 7.199,50')
   log(`[${name}] últimos movimientos: exactamente 3, ordenados por fecha (hoy=${today})`)
 
-  // Tasas de conversión
+  // Saldo en dólares: segunda página del carrusel (cotización de la fuente; sin cotización → "No disponible")
+  const track = page.getByRole('group', { name: 'Saldo por moneda' })
+  assert.equal(await page.getByRole('heading', { name: 'Tasas de conversión' }).count(), 0)
+  assert.equal(await page.getByRole('button', { name: 'Saldo en pesos' }).getAttribute('aria-current'), 'true')
+  await track.evaluate((el) => el.scrollTo({ left: el.clientWidth, behavior: 'instant' })) // equivale al deslizamiento
+  await page.getByRole('button', { name: 'Saldo en dólares', exact: true }).and(page.locator('[aria-current="true"]')).waitFor()
+  assert.ok(Math.abs((await track.evaluate((el) => el.scrollLeft)) - (await track.evaluate((el) => el.clientWidth))) < 2, 'el carrusel se ancla en la página USD')
   if (mockRate) {
-    await page.getByTestId('rate-buy').waitFor()
-    assert.match(await page.getByTestId('rate-buy').textContent(), /1\.385/)
-    assert.match(await page.getByTestId('rate-sell').textContent(), /1\.405,5/)
-    log(`[${name}] Dólar Blue mostrado (compra/venta)`)
+    await page.getByTestId('balance-usd').filter({ hasText: 'US$' }).waitFor()
+    assert.equal(await page.getByTestId('balance-usd').textContent(), 'US$ 5,12') // $ 7.199,50 / 1.405,5
+    log(`[${name}] saldo en USD calculado con la cotización de la fuente (US$ 5,12)`)
   } else {
-    await page.getByText(/cotización no está disponible/).waitFor()
-    log(`[${name}] cotización no disponible: estado de indisponibilidad, sin valores inventados`)
+    await page.getByTestId('balance-usd').filter({ hasText: 'No disponible' }).waitFor()
+    log(`[${name}] sin cotización: USD "No disponible", sin valores inventados`)
   }
+  await page.screenshot({ path: `${OUT}/${name}-1c-inicio-usd.png` })
+  await page.getByRole('button', { name: 'Saldo en pesos' }).click()
+  await page.getByRole('button', { name: 'Saldo en pesos' }).and(page.locator('[aria-current="true"]')).waitFor()
+  assert.equal(await page.getByRole('heading', { name: 'Últimos servicios' }).count(), 1)
 
   // Recordatorio
   await page.getByRole('button', { name: '+ Agregar' }).click()
