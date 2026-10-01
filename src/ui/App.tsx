@@ -8,6 +8,7 @@ import { Wordmark } from './components/Brand'
 import { Button } from './components/Button'
 import { Card } from './components/Card'
 import { ReminderSheet } from './components/ReminderSheet'
+import { LucaLoader, LucaMascot } from './luca'
 import { MovementFlow } from './flow/MovementFlow'
 import { TypeChooserSheet } from './flow/TypeChooserSheet'
 import { LoansScreen } from './loans/LoansScreen'
@@ -35,6 +36,7 @@ function ConnectionProblem({ message }: { message: string | null }) {
   return (
     <main className="mx-auto grid min-h-dvh max-w-md place-items-center bg-canvas px-gutter">
       <Card className="flex w-full flex-col items-start gap-3 p-6" role="alert">
+        <LucaMascot state="error" size="lg" animation="enter" />
         <h1 className="type-title">No pudimos conectar</h1>
         <p className="text-body-sm text-fg-soft">{message}</p>
         <Button onClick={() => window.location.reload()}>Reintentar</Button>
@@ -46,7 +48,11 @@ function ConnectionProblem({ message }: { message: string | null }) {
 function Splash() {
   return (
     <main className="mx-auto grid min-h-dvh max-w-md place-items-center bg-canvas" aria-busy="true" aria-label="Cargando DWF">
-      <Wordmark size="lg" className="animate-pulse" />
+      {/* Luca camina mientras se abre la app (quieta con movimiento reducido). */}
+      <div className="flex flex-col items-center gap-3">
+        <LucaLoader label="Cargando" size={88} />
+        <Wordmark size="lg" />
+      </div>
     </main>
   )
 }
@@ -75,6 +81,7 @@ function Shell() {
 
       {status === 'error' ? (
         <Card className="mx-gutter mt-safe flex flex-col items-start gap-3 p-6" role="alert">
+          <LucaMascot state="error" size="lg" animation="enter" />
           <h1 className="type-title">No pudimos cargar tus datos</h1>
           <p className="text-body-sm text-fg-soft">{errorMessage}</p>
           <Button onClick={reload}>Reintentar</Button>

@@ -13,6 +13,7 @@ import { useFinance } from '@/state/FinanceContext'
 import { Button, IconButton } from '../components/Button'
 import { Icon } from '../components/Icon'
 import { FlowFrame } from '../flow/FlowFrame'
+import { LucaMascot, jarLuca } from '../luca'
 import { AddMoneyFlow } from './AddMoneyFlow'
 import { JarIllustration } from './JarIllustration'
 
@@ -44,9 +45,17 @@ export function JarDetail({ jar, onClose }: { jar: SavingsJar; onClose(): void }
               <h1 className="type-heading truncate">{jar.name}</h1>
               <p className="text-body-sm text-fg-soft">Frasco de ahorro</p>
             </div>
+            <div className="flex shrink-0 items-center gap-2">
+              {/* Meta cumplida: Luca celebra con el trofeo; antes, acompaña con la alcancía. */}
+              <LucaMascot
+                state={jarLuca(summary.completed)}
+                size="sm"
+                animation={summary.completed ? 'celebrate' : 'enter'}
+              />
             <IconButton variant="secondary" size="md" onClick={onClose} aria-label="Cerrar detalle">
               <Icon name="close" />
             </IconButton>
+            </div>
           </header>
 
           <div className="min-h-0 flex-1 overflow-y-auto px-gutter pb-4">

@@ -68,12 +68,15 @@ async function run(name, device, { mockRate } = {}) {
 
   await page.goto(BASE_URL)
   // Primer ingreso: alta de teléfono + PIN
+  const welcome = page.getByRole('img', { name: /Luca, la mascota de DWF, te saluda/ })
+  await welcome.waitFor()
+  assert.equal(await welcome.getAttribute('data-luca'), 'welcome')
   await page.getByLabel('Número de teléfono').fill('11 2345 6789')
   await page.getByRole('button', { name: 'Continuar' }).click()
   await pin(page, '1234')
   await pin(page, '1234')
   await page.getByTestId('balance').waitFor()
-  log(`[${name}] alta de PIN y acceso al dashboard`)
+  log(`[${name}] Luca saluda en el login; alta de PIN y acceso al dashboard`)
 
   // Sin scroll horizontal
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
@@ -83,10 +86,24 @@ async function run(name, device, { mockRate } = {}) {
   assert.equal(await page.getByTestId('balance').textContent(), '$ 0,00')
   await page.screenshot({ path: `${OUT}/${name}-1-dashboard-vacio.png`, fullPage: true })
 
+  // Luca: aparece junto al saludo, con su imagen cargada, y no tapa los botones.
+  const luca = page.getByRole('img', { name: 'Luca, tu compañera de DWF' })
+  await luca.waitFor()
+  assert.equal(await luca.getAttribute('data-luca'), 'default')
+  assert.ok(await luca.locator('img').evaluate((img) => img.complete && img.naturalWidth > 0), 'la imagen de Luca debe cargar')
+  for (const label of ['Ingreso', 'Gasto']) {
+    const box = await page.getByRole('button', { name: label }).boundingBox()
+    const lucaBox = await luca.boundingBox()
+    assert.ok(box && lucaBox && lucaBox.y + lucaBox.height <= box.y, `Luca no debe tapar el botón ${label}`)
+  }
+  log(`[${name}] Luca visible en Inicio, imagen cargada y sin tapar botones`)
+
   await addMovement(page, 'Ingreso', { amount: '10000', concept: 'Sueldo octubre', category: 'Trabajo en relación de dependencia' })
   await page.getByText('Sueldo octubre').waitFor()
   assert.equal(await page.getByTestId('balance').textContent(), '$ 10.000,00')
   log(`[${name}] ingreso suma al saldo: $ 10.000,00`)
+  assert.equal(await page.getByRole('img', { name: 'Luca, tu compañera de DWF' }).getAttribute('data-luca'), 'happy')
+  log(`[${name}] Luca cambia a contenta con saldo positivo`)
 
   await addMovement(page, 'Gasto', { amount: '2500,5', concept: 'Supermercado', category: 'Transporte y movilidad', method: 'Efectivo' })
   await page.getByText('Supermercado').waitFor()
@@ -298,8 +315,33 @@ async function run(name, device, { mockRate } = {}) {
   const stored = await page.evaluate(() => JSON.stringify({ ...localStorage }))
   assert.ok(!stored.includes('"1234"') && !/pin"?:\s*"?1234/.test(stored), 'el PIN no debe estar en texto plano')
   assert.ok(!(await page.locator('body').innerText()).match(/ARQ/i), 'no debe aparecer ARQ')
+
+  // Luca recorre las pantallas sin generar scroll horizontal.
+  for (const tab of ['Movimientos', 'Préstamos', 'Ahorros', 'Inicio']) {
+    await page.getByRole('navigation', { name: 'Navegación principal' }).getByRole('button', { name: tab }).click()
+    await page.waitForTimeout(250)
+    const w = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+    assert.equal(w, 0, `sin scroll horizontal en ${tab}`)
+  }
+  log(`[${name}] sin scroll horizontal recorriendo Movimientos / Préstamos / Ahorros / Inicio`)
   assert.deepEqual(errors, [], `errores de consola: ${errors.join(' | ')}`)
   log(`[${name}] PIN no almacenado en texto plano, sin "ARQ", sin errores de consola`)
+  await context.close()
+}
+
+/** Con "reducir movimiento" Luca queda quieta en el login y en el Inicio. */
+async function runReducedMotion() {
+  await resetDatabase()
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce', locale: 'es-AR' })
+  const page = await context.newPage()
+  await page.route('**/api/dolar-blue', (route) => route.fulfill({ status: 502, json: { error: 'source_unavailable' } }))
+  await page.goto(BASE_URL)
+  const welcome = page.getByRole('img', { name: /Luca, la mascota de DWF/ })
+  await welcome.waitFor()
+  assert.equal(await welcome.getAttribute('data-motion'), 'reduced')
+  const animationName = await welcome.evaluate((el) => getComputedStyle(el).animationName)
+  assert.equal(animationName, 'none', 'Luca no debe animarse con movimiento reducido')
+  log('[movimiento-reducido] Luca queda quieta en el login')
   await context.close()
 }
 
@@ -308,6 +350,7 @@ try {
   await run('iphone-390', { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }, { mockRate: true })
   await run('iphone-375', { ...devices['iPhone X'], viewport: { width: 375, height: 812 } }, { mockRate: true })
   await run('escritorio', { viewport: { width: 1280, height: 800 } }, { mockRate: true })
+  await runReducedMotion()
   console.log('\nE2E OK')
 } finally {
   await browser.close()

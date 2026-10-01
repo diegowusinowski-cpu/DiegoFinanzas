@@ -145,7 +145,19 @@
   .scrollbar-none::-webkit-scrollbar { display: none; }
 }
 
+/* Luca: entra y después se balancea apenas (2 veces) y descansa. */
+@utility animate-luca-settle {
+  animation:
+    luca-enter 0.5s cubic-bezier(0.22, 1, 0.36, 1) both,
+    luca-idle 6s ease-in-out 1.2s 2 both;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  /* Luca nunca se mueve si la persona pidió menos movimiento. */
+  [data-luca] {
+    animation: none !important;
+  }
+
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;

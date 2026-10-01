@@ -11,6 +11,7 @@ import {
 import { useFinance } from '@/state/FinanceContext'
 import { useServices } from '@/state/ServicesContext'
 import { AmountStep } from './AmountStep'
+import { flowLuca } from '../luca'
 import { ConfirmStep } from './ConfirmStep'
 import { DoneStep } from './DoneStep'
 import { COUNTRY_INFO, previousStep, type FlowData, type FlowStep } from './flowModel'
@@ -94,7 +95,7 @@ export function MovementFlow({ type, onClose }: MovementFlowProps) {
     return () => document.removeEventListener('keydown', onKey)
   }, [step, onClose])
 
-  const nav = { onBack: back, backLabel: step === 'country' ? 'Cerrar' : 'Volver' }
+  const nav = { onBack: back, backLabel: step === 'country' ? 'Cerrar' : 'Volver', luca: flowLuca(data.type) }
 
   return (
     <FlowFrame>
@@ -157,7 +158,7 @@ export function MovementFlow({ type, onClose }: MovementFlowProps) {
         )}
       </div>
       {step === 'done' ? (
-        <DoneStep text={formatAmountInput(data.amountRaw)} currency={currency} onFinished={finished} />
+        <DoneStep type={data.type} text={formatAmountInput(data.amountRaw)} currency={currency} onFinished={finished} />
       ) : null}
     </FlowFrame>
   )

@@ -13,6 +13,7 @@ import { Flag } from '../components/Flags'
 import { IconButton } from '../components/Button'
 import { Icon } from '../components/Icon'
 import { OptionRow } from '../components/OptionRow'
+import { LucaMascot, flowLuca } from '../luca'
 import { Sheet } from '../components/Sheet'
 import { AmountDisplay } from './AmountDisplay'
 import { COUNTRY_INFO, HOLDER_LABEL, TYPE_LABEL } from './flowModel'
@@ -58,7 +59,14 @@ export function AmountStep(props: AmountStepProps) {
         }
       />
 
-      <section className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-gutter text-center">
+      <section className="relative flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-gutter text-center">
+        {/* Acompaña sin tapar: en pantallas bajas no se muestra. */}
+        <LucaMascot
+          state={flowLuca(type)}
+          size="sm"
+          animation="enter"
+          className="pointer-events-none absolute top-1 right-gutter [@media(max-height:700px)]:hidden"
+        />
         <AmountDisplay text={text} currency={currency} empty={!canContinue && amountRaw.replace(/[0,]/g, '') === ''} />
         <p className="text-body text-fg-muted">
           Vos {verb} {text} {currency}
