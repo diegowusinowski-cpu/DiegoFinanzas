@@ -7,7 +7,7 @@ import { Button, IconButton } from '../components/Button'
 import { Icon } from '../components/Icon'
 import { useToast } from '../components/Toast'
 import { FlowFrame } from '../flow/FlowFrame'
-import { LucaLoader, LucaMascot, createdLoanLuca } from '../luca'
+import { LucaLoader, LucaMascot } from '../luca'
 
 type ReceiptState = { status: 'loading' } | { status: 'error' } | { status: 'ready'; blob: Blob; url: string }
 
@@ -82,7 +82,7 @@ export function ReceiptScreen({ loan, mode, onClose }: ReceiptScreenProps) {
         <header className="flex min-h-16 shrink-0 items-center justify-between gap-3 px-gutter pt-safe pb-2">
           <div className="flex min-w-0 items-center gap-3">
             {/* Préstamo recién creado: Luca contenta. */}
-            {mode === 'created' ? <LucaMascot variant={createdLoanLuca} size="md" /> : null}
+            {mode === 'created' ? <LucaMascot state="happy" size="md" animation="celebrate" /> : null}
             <div className="min-w-0">
               <h1 className="type-heading">{mode === 'created' ? 'Préstamo creado' : 'Comprobante'}</h1>
               <p className="text-body-sm text-fg-soft">Comprobante de préstamo</p>
@@ -98,7 +98,7 @@ export function ReceiptScreen({ loan, mode, onClose }: ReceiptScreenProps) {
             <LucaLoader label="Generando comprobante" />
           ) : state.status === 'error' ? (
             <div className="flex flex-col items-center gap-3 text-center" role="alert">
-              <LucaMascot variant="error" size="lg" />
+              <LucaMascot state="error" size="lg" animation="enter" />
               <p className="text-body text-fg-soft">No se pudo generar la imagen del comprobante.</p>
               <Button variant="secondary" size="sm" onClick={retry}>
                 Reintentar

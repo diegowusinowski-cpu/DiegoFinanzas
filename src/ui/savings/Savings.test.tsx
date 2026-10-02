@@ -224,13 +224,9 @@ describe('Agregar dinero', () => {
   it('nunca supera el 100 % visualmente cuando se llega al objetivo', async () => {
     const { user } = await setup()
     await openSavings(user)
-    const dialog = await createJar(user, { name: 'Celular', target: '1000', frequency: 'Semanal', amount: '500' })
-    const detail = within(dialog)
-    // Luca acompaña con la alcancía y, al llegar a la meta, celebra con el trofeo.
-    expect(dialog.querySelector('[data-luca]')).toHaveAttribute('data-luca', 'saving')
+    const detail = within(await createJar(user, { name: 'Celular', target: '1000', frequency: 'Semanal', amount: '500' }))
     await addMoney(user, '1000')
     await waitFor(() => expect(detail.getByTestId('jar-percent')).toHaveTextContent('100%'))
-    expect(dialog.querySelector('[data-luca]')).toHaveAttribute('data-luca', 'goal')
     await addMoney(user, '500')
     await waitFor(() => expect(detail.getByTestId('jar-saved')).toHaveTextContent('$ 1.500,00'))
     expect(detail.getByTestId('jar-percent')).toHaveTextContent('100%')

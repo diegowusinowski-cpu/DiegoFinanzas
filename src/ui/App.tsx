@@ -36,7 +36,7 @@ function ConnectionProblem({ message }: { message: string | null }) {
   return (
     <main className="mx-auto grid min-h-dvh max-w-md place-items-center bg-canvas px-gutter">
       <Card className="flex w-full flex-col items-start gap-3 p-6" role="alert">
-        <LucaMascot variant="error" size="lg" />
+        <LucaMascot state="error" size="lg" animation="enter" />
         <h1 className="type-title">No pudimos conectar</h1>
         <p className="text-body-sm text-fg-soft">{message}</p>
         <Button onClick={() => window.location.reload()}>Reintentar</Button>
@@ -81,7 +81,7 @@ function Shell() {
 
       {status === 'error' ? (
         <Card className="mx-gutter mt-safe flex flex-col items-start gap-3 p-6" role="alert">
-          <LucaMascot variant="error" size="lg" />
+          <LucaMascot state="error" size="lg" animation="enter" />
           <h1 className="type-title">No pudimos cargar tus datos</h1>
           <p className="text-body-sm text-fg-soft">{errorMessage}</p>
           <Button onClick={reload}>Reintentar</Button>

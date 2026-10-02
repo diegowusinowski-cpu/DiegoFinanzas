@@ -24,7 +24,7 @@ function SelectionScreen({
       <FlowHeader
         onBack={header.onBack}
         backLabel={header.backLabel}
-        {...(header.luca ? { trailing: <LucaMascot variant={header.luca} size="sm" /> } : {})}
+        {...(header.luca ? { trailing: <LucaMascot state={header.luca} size="sm" animation="enter" /> } : {})}
       />
       <main className="flex-1 overflow-y-auto px-gutter pt-4 pb-safe">
         <h1 className="type-display">{title}</h1>

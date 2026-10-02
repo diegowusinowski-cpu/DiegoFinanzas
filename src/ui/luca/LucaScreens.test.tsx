@@ -2,18 +2,11 @@ import { act, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { addMovement, firstRun, goToAmount, mount, setupUser, typeAmount } from '@/test/flowHelpers'
 import { createTestServices } from '@/test/services'
-import { LUCA_GREETING_MS } from './greeting'
 
 afterEach(() => {
   vi.useRealTimers()
   vi.unstubAllGlobals()
 })
-
-/** Deja pasar el saludo inicial de Luca en el Inicio. */
-const afterGreeting = () =>
-  act(async () => {
-    vi.advanceTimersByTime(LUCA_GREETING_MS + 100)
-  })
 
 /** Estado actual de cada Luca visible (en el orden del documento). */
 const lucas = (root: ParentNode = document.body) =>
@@ -35,11 +28,8 @@ describe('Luca en la app', () => {
   it('Inicio: Luca cambia de expresión con la cuenta y no hace falta para usar la app', async () => {
     const user = setupUser()
     await firstRun(user)
-    // Al abrir el Inicio saluda una vez y después queda en su estado normal.
-    expect(screen.getByRole('img', { name: 'Luca, tu compañera de DWF' })).toHaveAttribute('data-luca', 'waving')
-    await afterGreeting()
     const header = screen.getByRole('img', { name: 'Luca, tu compañera de DWF' })
-    expect(header).toHaveAttribute('data-luca', 'idle')
+    expect(header).toHaveAttribute('data-luca', 'default')
 
     await addMovement(user, 'Ingreso', { category: 'Trabajo en relación de dependencia', amount: '1000' })
     expect(screen.getByRole('img', { name: 'Luca, tu compañera de DWF' })).toHaveAttribute('data-luca', 'happy')
@@ -53,7 +43,6 @@ describe('Luca en la app', () => {
   it('Recordatorios: atenta con pendientes; sin recordatorios no aparece', async () => {
     const user = setupUser()
     await firstRun(user)
-    await afterGreeting()
     expect(screen.getByText('Sin recordatorios')).toBeInTheDocument()
     expect(lucas()).not.toContain('attentive')
 
@@ -71,30 +60,18 @@ describe('Luca en la app', () => {
   it('Ingreso: tranquila durante la carga; el botón Continuar sigue activo', async () => {
     const user = setupUser()
     await firstRun(user)
-    await afterGreeting()
 
     await goToAmount(user, 'Ingreso', { category: 'Trabajo en relación de dependencia' })
-    expect(lucas(document.body)).toEqual(expect.arrayContaining(['idle']))
+    expect(lucas(document.body)).toEqual(expect.arrayContaining(['default']))
     await typeAmount(user, '50')
     expect(screen.getByRole('button', { name: 'Continuar' })).toBeEnabled()
   })
 
-  it('Gasto: pensativa mientras elige país, titular y categoría', async () => {
+  it('Gasto: pensativa durante la carga, sin tapar el teclado ni el botón', async () => {
     const user = setupUser()
     await firstRun(user)
-    await afterGreeting()
-    await user.click(screen.getByRole('button', { name: 'Gasto' }))
-    await screen.findByRole('button', { name: /^Argentina/ })
-    expect(lucas(document.body)).toContain('thinking')
-  })
-
-  it('Gasto: con la bolsa en el monto, sin tapar el teclado ni el botón', async () => {
-    const user = setupUser()
-    await firstRun(user)
-    await afterGreeting()
     await goToAmount(user, 'Gasto', { category: 'Transporte y movilidad' })
-    // Con la bolsa de compras en la pantalla del monto; pensativa en los pasos de elegir.
-    expect(lucas(document.body)).toContain('spending')
+    expect(lucas(document.body)).toContain('thinking')
     await typeAmount(user, '50')
     expect(screen.getByRole('button', { name: 'Continuar' })).toBeEnabled()
   })

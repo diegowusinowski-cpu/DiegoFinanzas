@@ -42,7 +42,7 @@ export function DoneStep({ type, text, currency, onFinished }: DoneStepProps) {
     >
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-gutter text-center">
         {/* Celebra un ingreso; en un gasto queda tranquila. Entra cuando la pantalla terminó de subir. */}
-        <LucaMascot variant={confirmedLuca(type)} size="lg" delayMs={500} className="mb-1" />
+        <LucaMascot state={confirmedLuca(type)} size="lg" animation="celebrate" delayMs={500} className="mb-1" />
         <h1 className="type-heading">Movimiento confirmado</h1>
         <div className="mt-4">
           <AmountDisplay text={text} currency={currency} />
