@@ -1,13 +1,11 @@
 import { useEffect, useRef } from 'react'
-import type { CurrencyCode, TransactionType } from '@/domain'
-import { LucaMascot, confirmedLuca } from '../luca'
+import type { CurrencyCode } from '@/domain'
 import { AmountDisplay } from './AmountDisplay'
 
 const COVER_MS = 650
 const HOLD_MS = 1000
 
 interface DoneStepProps {
-  type: TransactionType
   text: string
   currency: CurrencyCode
   onFinished(): void
@@ -21,7 +19,7 @@ function prefersReducedMotion(): boolean {
  * Movimiento confirmado. Sube desde abajo cubriendo la pantalla (650 ms), el
  * check se dibuja y, tras ~1 s, el flujo vuelve al Home.
  */
-export function DoneStep({ type, text, currency, onFinished }: DoneStepProps) {
+export function DoneStep({ text, currency, onFinished }: DoneStepProps) {
   const finished = useRef(onFinished)
   useEffect(() => {
     finished.current = onFinished
@@ -41,8 +39,6 @@ export function DoneStep({ type, text, currency, onFinished }: DoneStepProps) {
       className="absolute inset-0 z-10 flex animate-cover flex-col bg-canvas pt-safe pb-safe"
     >
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-gutter text-center">
-        {/* Celebra un ingreso; en un gasto queda tranquila. Entra cuando la pantalla terminó de subir. */}
-        <LucaMascot state={confirmedLuca(type)} size="lg" animation="celebrate" delayMs={500} className="mb-1" />
         <h1 className="type-heading">Movimiento confirmado</h1>
         <div className="mt-4">
           <AmountDisplay text={text} currency={currency} />

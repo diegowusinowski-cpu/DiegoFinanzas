@@ -5,7 +5,6 @@ import { IconButton } from '../components/Button'
 import { EmptyState, Skeleton } from '../components/Card'
 import { Icon } from '../components/Icon'
 import { FlowHeader } from '../flow/FlowFrame'
-import { LucaEmptyState } from '../luca'
 import { FILTER_LABEL, FilterSheet } from '../movements/FilterSheet'
 import { MovementDetail } from '../movements/MovementDetail'
 import { MovementRow } from '../movements/MovementRow'
@@ -99,9 +98,9 @@ export function MovementsScreen({ onBack }: { onBack(): void }) {
             ))}
           </div>
         ) : history.length === 0 ? (
-          <LucaEmptyState state="sleeping" title="Todavía no hay movimientos">
+          <EmptyState icon="list" title="Todavía no hay movimientos">
             Tus ingresos y gastos se van a listar acá, del más reciente al más antiguo.
-          </LucaEmptyState>
+          </EmptyState>
         ) : groups.length === 0 ? (
           <EmptyState icon="search" title="Sin resultados">
             {filtering ? 'Probá con otra búsqueda o cambiá el filtro.' : ''}

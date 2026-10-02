@@ -3,14 +3,11 @@ import { Flag } from '../components/Flags'
 import { Icon } from '../components/Icon'
 import { OptionRow } from '../components/OptionRow'
 import { COUNTRY_INFO, HOLDER_LABEL, TYPE_LABEL } from './flowModel'
-import { LucaMascot, type LucaState } from '../luca'
 import { FlowHeader } from './FlowFrame'
 
 interface StepProps {
   onBack(): void
   backLabel: string
-  /** Estado de Luca que acompaña el paso (decorativo). */
-  luca?: LucaState
 }
 
 function SelectionScreen({
@@ -21,11 +18,7 @@ function SelectionScreen({
 }: StepProps & { title: string; description?: string; children: React.ReactNode }) {
   return (
     <>
-      <FlowHeader
-        onBack={header.onBack}
-        backLabel={header.backLabel}
-        {...(header.luca ? { trailing: <LucaMascot state={header.luca} size="sm" animation="enter" /> } : {})}
-      />
+      <FlowHeader onBack={header.onBack} backLabel={header.backLabel} />
       <main className="flex-1 overflow-y-auto px-gutter pt-4 pb-safe">
         <h1 className="type-display">{title}</h1>
         {description ? <p className="mt-2 text-body text-fg-soft">{description}</p> : null}

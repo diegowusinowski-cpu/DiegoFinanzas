@@ -3,7 +3,6 @@ import { PIN_LENGTH, maskPhone, normalizePhone } from '@/services/auth'
 import { useAuth } from '@/state/AuthContext'
 import { Button } from '../components/Button'
 import { BRAND_NAME, Wordmark } from '../components/Brand'
-import { LucaMascot } from '../luca'
 import { Field, inputClass } from '../components/Field'
 import { PinDots, PinPad } from '../components/PinPad'
 import { Sheet } from '../components/Sheet'
@@ -35,15 +34,6 @@ export function LoginScreen() {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-canvas px-gutter pt-safe pb-safe sm:border-x sm:border-line">
       <header className="flex flex-col items-center gap-2 pt-6">
-        {/* Luca saluda desde la primera pantalla; en pantallas bajas (o con el teclado abierto) se oculta para no tapar nada. */}
-        <LucaMascot
-          state="welcome"
-          size={104}
-          animation="idle"
-          priority
-          label="Luca, la mascota de DWF, te saluda"
-          className="[@media(max-height:640px)]:hidden"
-        />
         <Wordmark size="lg" />
         <p className="text-caption text-fg-soft">{BRAND_NAME}</p>
       </header>

@@ -1,5 +1,0 @@
-export { LucaMascot, LUCA_SIZES, type LucaAnimation, type LucaMascotProps, type LucaSize } from './LucaMascot'
-export { LucaEmptyState, LucaLoader } from './LucaScenes'
-export { confirmedLuca, flowLuca, homeLuca, jarLuca, loanLuca, remindersLuca } from './moods'
-export { LUCA_POSES, LUCA_STATES, type LucaState } from './poses'
-export { useReducedMotion } from './useReducedMotion'

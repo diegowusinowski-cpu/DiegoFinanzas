@@ -2,10 +2,9 @@ import { useState } from 'react'
 import { formatMoney } from '@/domain'
 import { useFinance } from '@/state/FinanceContext'
 import { cx } from '../cx'
-import { Skeleton } from '../components/Card'
+import { EmptyState, Skeleton } from '../components/Card'
 import { Icon } from '../components/Icon'
 import { OptionRow } from '../components/OptionRow'
-import { LucaEmptyState, LucaMascot } from '../luca'
 import { FlowHeader } from '../flow/FlowFrame'
 import { JarDetail } from './JarDetail'
 import { JarRow } from './JarRow'
@@ -66,12 +65,9 @@ export function SavingsScreen({ onBack }: { onBack(): void }) {
           </ul>
 
           <section aria-labelledby="jars-title" className="flex flex-col gap-2">
-            <div className="flex items-center justify-between gap-3">
-              <h2 id="jars-title" className="type-title">
-                Mis frascos
-              </h2>
-              {!loading && jars.length > 0 ? <LucaMascot state="saving" size="sm" animation="enter" /> : null}
-            </div>
+            <h2 id="jars-title" className="type-title">
+              Mis frascos
+            </h2>
             {loading ? (
               <div className="flex flex-col gap-3" aria-busy="true" aria-label="Cargando frascos">
                 {[0, 1].map((i) => (
@@ -79,9 +75,9 @@ export function SavingsScreen({ onBack }: { onBack(): void }) {
                 ))}
               </div>
             ) : jars.length === 0 ? (
-              <LucaEmptyState state="saving" title="Todavía no hay frascos">
+              <EmptyState icon="jar" title="Todavía no hay frascos">
                 Creá uno para separar dinero hacia un objetivo.
-              </LucaEmptyState>
+              </EmptyState>
             ) : (
               <ul>
                 {jars.map((jar) => (

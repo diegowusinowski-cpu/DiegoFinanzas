@@ -34,16 +34,12 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,woff2,webp}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         // La cotización siempre se pide en vivo: nunca desde el precache.
         navigateFallbackDenylist: [/^\/api\//],
       },
     }),
   ],
-  build: {
-    // Las poses de Luca se publican como archivos aparte (se cargan solo cuando hacen falta), no embebidas en el JS.
-    assetsInlineLimit: (file) => (file.endsWith('.webp') ? false : undefined),
-  },
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },

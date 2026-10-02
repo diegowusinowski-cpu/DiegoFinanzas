@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import {
   INSTALLMENT_VIEW_LABEL,
   LOAN_VIEW_LABEL,
@@ -19,7 +19,6 @@ import { Icon } from '../components/Icon'
 import { Sheet } from '../components/Sheet'
 import { useToast } from '../components/Toast'
 import { FlowFrame } from '../flow/FlowFrame'
-import { LucaMascot, loanLuca } from '../luca'
 import { INSTALLMENT_VIEW_STYLE } from './loanStyles'
 
 interface LoanDetailProps {
@@ -46,15 +45,7 @@ export function LoanDetail({ loan, installments, onOpenReceipt, onClose }: LoanD
   const view = loanView(loan, installments, today)
   const [collecting, setCollecting] = useState<LoanInstallment | null>(null)
   const [saving, setSaving] = useState(false)
-  const [justPaid, setJustPaid] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  // La carita feliz tras un cobro dura un momento y vuelve al estado del préstamo.
-  useEffect(() => {
-    if (!justPaid) return
-    const timer = setTimeout(() => setJustPaid(false), 3000)
-    return () => clearTimeout(timer)
-  }, [justPaid])
 
   const closeSheet = () => {
     if (saving) return
@@ -74,7 +65,6 @@ export function LoanDetail({ loan, installments, onOpenReceipt, onClose }: LoanD
     }
     toast.show(`Cuota ${collecting.installmentNumber} cobrada`)
     setCollecting(null)
-    setJustPaid(true)
   }
   const percent = loan.installmentCount === 0 ? 0 : Math.round((paid / loan.installmentCount) * 100)
 
@@ -130,18 +120,9 @@ export function LoanDetail({ loan, installments, onOpenReceipt, onClose }: LoanD
           </dl>
 
           <section aria-labelledby="installments-title" className="mt-4">
-            <div className="mb-1 flex items-center justify-between gap-3">
-              <h2 id="installments-title" className="type-title">
-                Cuotas
-              </h2>
-              {/* Pensativa con cuotas pendientes; contenta si el préstamo está completo o recién se cobró una cuota. */}
-              <LucaMascot
-                key={justPaid ? 'paid' : 'idle'}
-                state={justPaid ? 'happy' : loanLuca(view)}
-                size="sm"
-                animation={justPaid ? 'celebrate' : 'enter'}
-              />
-            </div>
+            <h2 id="installments-title" className="type-title mb-1">
+              Cuotas
+            </h2>
             <ul>
               {installmentViews(installments, today).map(({ installment, view: installmentView }) => {
                 const style = INSTALLMENT_VIEW_STYLE[installmentView]

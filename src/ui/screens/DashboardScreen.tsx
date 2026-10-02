@@ -12,7 +12,6 @@ import { UsdBalanceSheet } from '../components/UsdBalanceSheet'
 import { ReminderCard } from '../components/ReminderCards'
 import { SectionAction, SectionHeader } from '../components/SectionHeader'
 import { ServiceItem } from '../components/ServiceItem'
-import { LucaMascot, homeLuca, remindersLuca } from '../luca'
 import { useUsdBlueRate } from '../hooks/useExchangeRate'
 
 const LATEST_SERVICES_LIMIT = 4
@@ -29,7 +28,6 @@ export function DashboardScreen({ onNewTransaction, onNewReminder, onSeeAll }: D
   const { state: rateState } = useUsdBlueRate()
   const loading = finance.status === 'loading'
   const [usdOpen, setUsdOpen] = useState(false)
-  const reminderLuca = remindersLuca(finance.reminders.length)
   const services = latestServices(finance.transactions, finance.categories, LATEST_SERVICES_LIMIT)
 
   return (
@@ -39,22 +37,11 @@ export function DashboardScreen({ onNewTransaction, onNewReminder, onSeeAll }: D
       <section className="bg-panel-texture px-gutter pt-safe pb-9 text-on-panel">
         <header className="flex min-h-control-md items-center justify-between">
           <Wordmark className="text-on-panel" />
-          <div className="flex items-center gap-2">
-            {/* Luca junto al saludo, sobre un fondo claro para que resalte en el verde. Cambia de gesto según la cuenta. */}
-            <LucaMascot
-              state={loading ? 'default' : homeLuca(finance.balance)}
-              size="sm"
-              chip
-              priority
-              animation="enter"
-              label="Luca, tu compañera de DWF"
-            />
-            {profile ? (
-              <p className="rounded-pill bg-glass-on-panel px-3.5 py-2 text-body-sm leading-none font-medium text-on-panel">
-                Hola, {profile.displayName}
-              </p>
-            ) : null}
-          </div>
+          {profile ? (
+            <p className="rounded-pill bg-glass-on-panel px-3.5 py-2 text-body-sm leading-none font-medium text-on-panel">
+              Hola, {profile.displayName}
+            </p>
+          ) : null}
         </header>
 
         <div className="mt-8 flex flex-col gap-6">
@@ -86,12 +73,7 @@ export function DashboardScreen({ onNewTransaction, onNewReminder, onSeeAll }: D
           <SectionHeader
             id="reminders-title"
             title="Recordatorios"
-            action={
-              <span className="flex items-center gap-1">
-                {reminderLuca ? <LucaMascot state={reminderLuca} size="xs" animation="enter" /> : null}
-                <SectionAction onClick={onNewReminder}>+ Agregar</SectionAction>
-              </span>
-            }
+            action={<SectionAction onClick={onNewReminder}>+ Agregar</SectionAction>}
           />
           {loading ? (
             <Skeleton className="h-14" />

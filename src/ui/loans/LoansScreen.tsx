@@ -1,10 +1,9 @@
 import { useState } from 'react'
 import { installmentsOf, formatMoney, loansSummary, type Loan } from '@/domain'
 import { useFinance } from '@/state/FinanceContext'
-import { Skeleton } from '../components/Card'
+import { EmptyState, Skeleton } from '../components/Card'
 import { Icon } from '../components/Icon'
 import { OptionRow } from '../components/OptionRow'
-import { LucaEmptyState, LucaMascot } from '../luca'
 import { FlowHeader } from '../flow/FlowFrame'
 import { LoanCalculator } from './LoanCalculator'
 import { LoanDetail } from './LoanDetail'
@@ -77,12 +76,9 @@ export function LoansScreen({ onBack }: { onBack(): void }) {
           </ul>
 
           <section aria-labelledby="my-loans-title" className="flex flex-col gap-2">
-            <div className="flex items-center justify-between gap-3">
-              <h2 id="my-loans-title" className="type-title">
-                Mis préstamos
-              </h2>
-              {!loading && loans.length > 0 ? <LucaMascot state="lending" size="sm" animation="enter" /> : null}
-            </div>
+            <h2 id="my-loans-title" className="type-title">
+              Mis préstamos
+            </h2>
             {loading ? (
               <div className="flex flex-col gap-3" aria-busy="true" aria-label="Cargando préstamos">
                 {[0, 1].map((i) => (
@@ -90,9 +86,9 @@ export function LoansScreen({ onBack }: { onBack(): void }) {
                 ))}
               </div>
             ) : loans.length === 0 ? (
-              <LucaEmptyState state="lending" title="Todavía no hay préstamos">
+              <EmptyState icon="loan" title="Todavía no hay préstamos">
                 Cuando crees uno, vas a verlo acá con sus cuotas.
-              </LucaEmptyState>
+              </EmptyState>
             ) : (
               <ul>
                 {loans.map((loan) => (
