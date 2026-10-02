@@ -15,27 +15,41 @@ export default defineConfig({
     dwfApi(),
     VitePWA({
       registerType: 'autoUpdate',
+      // Solo estos dos se agregan al caché; los demás íconos y las pantallas de arranque se piden al instalar.
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+      includeManifestIcons: false,
       manifest: {
-        name: 'DWF — Dieto Wusinowski Finanzas',
+        id: '/',
+        name: 'DiegoFinanzas',
         short_name: 'DWF',
-        description: 'Ingresos, gastos y saldo en un solo lugar.',
+        description: 'Ingresos, gastos, préstamos y ahorros en un solo lugar.',
         lang: 'es-AR',
+        dir: 'ltr',
         start_url: '/',
         scope: '/',
         display: 'standalone',
         orientation: 'portrait',
-        background_color: '#f5f1ec',
-        theme_color: '#f5f1ec',
+        categories: ['finance', 'productivity'],
+        background_color: '#f4f0ea',
+        theme_color: '#14392a',
         icons: [
-          { src: 'pwa-192.png', sizes: '192x192', type: 'image/png' },
-          { src: 'pwa-512.png', sizes: '512x512', type: 'image/png' },
-          { src: 'pwa-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          ...[48, 72, 96, 144, 192, 256, 384, 512].map((size) => ({
+            src: `icons/icon-${size}.png`,
+            sizes: `${size}x${size}`,
+            type: 'image/png',
+            purpose: 'any',
+          })),
+          { src: 'icons/maskable-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+          { src: 'icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
-        // La cotización siempre se pide en vivo: nunca desde el precache.
+        // Solo la interfaz (código, estilos, tipografías y el HTML de arranque). Nunca datos.
+        globPatterns: ['**/*.{js,css,html,svg,woff2}'],
+        cleanupOutdatedCaches: true,
+        navigateFallback: 'index.html',
+        // El backend y la cotización siempre se piden en vivo: el service worker no los toca (sin runtimeCaching:
+        // van directo a la red) y tampoco se redirigen al HTML.
         navigateFallbackDenylist: [/^\/api\//],
       },
     }),

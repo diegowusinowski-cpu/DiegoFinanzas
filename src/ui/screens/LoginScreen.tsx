@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { PIN_LENGTH, maskPhone, normalizePhone } from '@/services/auth'
 import { useAuth } from '@/state/AuthContext'
 import { Button } from '../components/Button'
+import { InstallApp } from '../components/InstallApp'
 import { BRAND_NAME, Wordmark } from '../components/Brand'
 import { Field, inputClass } from '../components/Field'
 import { PinDots, PinPad } from '../components/PinPad'
@@ -38,6 +39,7 @@ export function LoginScreen() {
         <p className="text-caption text-fg-soft">{BRAND_NAME}</p>
       </header>
       {status === 'setup' ? <SetupFlow /> : <PinLogin name={profile?.displayName ?? ''} phone={profile?.phone ?? ''} />}
+      <InstallApp />
     </main>
   )
 }

@@ -11,7 +11,16 @@ const vercel = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url
 
 describe('configuración de producción (vercel.json)', () => {
   it('aplica a todo el sitio las mismas cabeceras de seguridad que se prueban en el build', () => {
-    expect(vercel.headers).toEqual([{ source: '/(.*)', headers: [...SECURITY_HEADERS] }])
+    expect(vercel.headers[0]).toEqual({ source: '/(.*)', headers: [...SECURITY_HEADERS] })
+  })
+
+  it('el resto de las cabeceras solo ajusta el caché de la PWA (service worker, manifest, íconos)', () => {
+    const rest = vercel.headers.slice(1)
+    expect(rest.map((h) => h.source)).toEqual(['/sw.js', '/manifest.webmanifest', '/(icons|splash)/(.*)'])
+    // El service worker nunca se cachea: así cada despliegue lo actualiza.
+    expect(rest[0]?.headers).toContainEqual({ key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' })
+    // Ninguna regla de caché toca el backend ni los datos.
+    expect(vercel.headers.some((h) => h.source.includes('api'))).toBe(false)
   })
 
   it('la política de contenido solo permite lo que la app usa', () => {

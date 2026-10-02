@@ -49,7 +49,7 @@ El saldo nunca se guarda: se deriva de los movimientos `COMPLETED`.
 2. En el proyecto de Vercel → pestaña **Storage** → *Create Database* → **Neon (Postgres)** → plan gratuito → conectarla a este proyecto (marcar Production, Preview y Development). Eso crea `DATABASE_URL` automáticamente.
 3. **Redeploy** (Deployments → ⋯ → Redeploy) para que la app tome la variable.
 4. Abrir la URL de producción desde el celular. En el primer ingreso cargás tu teléfono y tu PIN: esa pasa a ser tu cuenta. Si Inicio muestra "La base de datos no está configurada", falta el paso 2 o el 3.
-5. Instalar como app (PWA): en el celular, menú del navegador → *Agregar a pantalla de inicio*.
+5. Instalar como app (PWA): en el acceso aparece *Instalar DWF en tu celular* con los pasos de cada plataforma (Android/Chrome/Samsung: cuadro nativo o menú ⋮ → *Instalar app*; iPhone: Safari → Compartir → *Agregar a inicio*).
 
 ### Administrar la base (desde tu computadora)
 
@@ -81,3 +81,10 @@ Siempre se guarda la última cotización válida en el dispositivo: si todas las
 - Despliegue en Vercel: importar el repositorio y *Deploy* (no hay nada más que configurar). Cualquier otro hosting estático (Netlify, GitHub Pages, un `dist/` subido a un servidor) también funciona: la cotización llega por las fuentes públicas.
 
 La app usa HTTPS, requisito de la PWA y del cifrado del PIN (`crypto.subtle`).
+
+## PWA (app instalable)
+
+- **Manifest**: nombre `DiegoFinanzas`, corto `DWF`, `standalone`, colores de DWF (`theme_color` verde `#14392a`, `background_color` `#f4f0ea`). Se define en `vite.config.ts`.
+- **Íconos y pantallas de arranque**: `npm run pwa:icons` los regenera (PNG, con la tipografía y los colores de la app): íconos 48–512, maskable 192/512, `apple-touch-icon` y 12 pantallas de arranque de iPhone en `public/splash`.
+- **Service worker** (Workbox, `autoUpdate`): solo precachea la interfaz (JS, CSS, HTML, tipografías, íconos básicos). Las rutas `/api/*` no se precachean ni se cachean (van directo a la red): los datos financieros, la sesión y la cotización **nunca** se guardan en caché; sin conexión la app abre la interfaz con un aviso de conexión y no muestra ningún dato.
+- **Verificación**: `npm run build`, luego `DWF_DB=memory DWF_E2E=1 npx vite preview --port 4173` y `BASE_URL=http://127.0.0.1:4173 npm run pwa:check` (instalabilidad según Chrome, caché, offline, iPhone/Android a 375×812 y 390×844).

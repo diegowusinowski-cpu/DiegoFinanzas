@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
+import { initInstallPrompt } from '@/pwa/install'
 import { createAppServices } from '@/services/container'
 import { AuthProvider } from '@/state/AuthContext'
 import { ServicesProvider } from '@/state/ServicesContext'
@@ -25,4 +26,5 @@ async function start() {
   )
 }
 
+initInstallPrompt()
 void start()
