@@ -1,6 +1,5 @@
 import { useId } from 'react'
 import {
-  PAYMENT_METHODS,
   formatAmountInput,
   type Category,
   type Country,
@@ -8,11 +7,11 @@ import {
   type PaymentMethod,
   type TransactionType,
 } from '@/domain'
-import { cx } from '../cx'
 import { Button } from '../components/Button'
 import { Icon } from '../components/Icon'
 import { AmountDisplay } from './AmountDisplay'
-import { COUNTRY_INFO, HOLDER_LABEL, PAYMENT_LABEL, TYPE_LABEL, formatLongDate } from './flowModel'
+import { COUNTRY_INFO, HOLDER_LABEL, TYPE_LABEL, formatLongDate } from './flowModel'
+import { PaymentMethodChips } from './PaymentMethodChips'
 import { FlowHeader } from './FlowFrame'
 
 interface ConfirmStepProps {
@@ -72,26 +71,7 @@ export function ConfirmStep(props: ConfirmStepProps) {
               Tipo
             </dt>
             <dd>
-              <div role="radiogroup" aria-labelledby={methodLabelId} className="flex gap-1.5">
-                {PAYMENT_METHODS.map((method) => {
-                  const selected = method === paymentMethod
-                  return (
-                    <button
-                      key={method}
-                      type="button"
-                      role="radio"
-                      aria-checked={selected}
-                      onClick={() => props.onChangeMethod(method)}
-                      className={cx(
-                        'interactive h-9 rounded-pill px-3.5 text-body-sm font-medium',
-                        selected ? 'bg-action text-on-action' : 'bg-sunken text-fg-soft hover:bg-sunken-hover',
-                      )}
-                    >
-                      {PAYMENT_LABEL[method]}
-                    </button>
-                  )
-                })}
-              </div>
+              <PaymentMethodChips value={paymentMethod} onChange={props.onChangeMethod} labelledBy={methodLabelId} />
             </dd>
           </div>
 

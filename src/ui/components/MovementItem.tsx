@@ -1,5 +1,6 @@
 import { formatMoney, formatRelativeDate, type Category, type Transaction } from '@/domain'
 import { cx } from '../cx'
+import { CashBadge } from './CashBadge'
 import { Icon } from './Icon'
 
 interface MovementItemProps {
@@ -31,7 +32,9 @@ export function MovementItem({ transaction, category, today }: MovementItemProps
         <p className={cx('type-subheading truncate', cancelled ? 'text-fg-muted line-through' : 'text-fg')}>
           {transaction.description}
         </p>
-        <p className="truncate text-body-sm text-fg-soft">
+        <p className="flex items-center gap-1.5 text-body-sm text-fg-soft">
+          {transaction.paymentMethod === 'CASH' ? <CashBadge /> : null}
+          <span className="min-w-0 truncate">
           {typeLabel} · {formatRelativeDate(transaction.date, today)}, {transaction.time}
           {category ? ` · ${category.name}` : ''}
           {scheduled || cancelled ? (
@@ -39,6 +42,7 @@ export function MovementItem({ transaction, category, today }: MovementItemProps
               {scheduled ? 'Programado' : 'Anulado'}
             </span>
           ) : null}
+          </span>
         </p>
       </div>
       <p

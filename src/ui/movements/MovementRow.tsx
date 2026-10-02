@@ -1,5 +1,6 @@
 import { formatMoney, formatRelativeDate, type Transaction } from '@/domain'
 import { cx } from '../cx'
+import { CashBadge } from '../components/CashBadge'
 import { Icon } from '../components/Icon'
 import { categoryIcon } from './categoryIcon'
 import { STATUS_LABEL } from './statusLabel'
@@ -43,13 +44,16 @@ export function MovementRow({ transaction, today, onOpen }: MovementRowProps) {
           <span className={cx('type-subheading block truncate', cancelled ? 'text-fg-muted line-through' : 'text-fg')}>
             {transaction.description}
           </span>
-          <span className="block truncate text-body-sm text-fg-soft">
+          <span className="flex items-center gap-1.5 text-body-sm text-fg-soft">
+            {transaction.paymentMethod === 'CASH' ? <CashBadge /> : null}
+            <span className="min-w-0 truncate">
             {formatRelativeDate(transaction.date, today)}, {transaction.time}
             {transaction.status !== 'COMPLETED' ? (
               <span className="ml-1.5 rounded-chip bg-sunken px-1.5 py-0.5 text-caption font-medium">
                 {STATUS_LABEL[transaction.status]}
               </span>
             ) : null}
+            </span>
           </span>
         </span>
 

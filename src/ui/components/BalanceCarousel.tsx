@@ -34,6 +34,8 @@ interface BalanceCarouselProps {
   /** Fecha de hoy (`YYYY-MM-DD`). */
   today: string
   onEditUsd(): void
+  /** Abre el detalle del saldo en pesos (efectivo y transferencia). Recibe si el saldo está oculto. */
+  onOpenBreakdown(hidden: boolean): void
 }
 
 const PAGES = [
@@ -47,7 +49,7 @@ const PAGES = [
  * valor del día. Ocupa el mismo alto que el saldo en pesos solo: los puntos y la cotización usan el
  * espacio libre que ya había alrededor.
  */
-export function BalanceCarousel({ ars, usd, loading, rate, today, onEditUsd }: BalanceCarouselProps) {
+export function BalanceCarousel({ ars, usd, loading, rate, today, onEditUsd, onOpenBreakdown }: BalanceCarouselProps) {
   const [hidden, setHidden] = useState(false)
   const [page, setPage] = useState(0)
   const track = useRef<HTMLDivElement>(null)
@@ -101,11 +103,30 @@ export function BalanceCarousel({ ars, usd, loading, rate, today, onEditUsd }: B
               loading ? (
                 <Skeleton className="h-11 w-52 bg-glass-on-panel" />
               ) : (
-                <Amount testId="balance" text={arsText} negative={ars < 0 && !hidden} />
+                <button
+                  type="button"
+                  onClick={() => onOpenBreakdown(hidden)}
+                  aria-haspopup="dialog"
+                  className="interactive block w-full rounded-control text-left"
+                >
+                  <Amount testId="balance" text={arsText} negative={ars < 0 && !hidden} />
+                  <span className="sr-only">Ver el saldo en efectivo y por transferencia</span>
+                </button>
               )
             }
           />
-          <Caption>ARS • Datos de cuenta</Caption>
+          <Caption>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => onOpenBreakdown(hidden)}
+              aria-haspopup="dialog"
+              className="interactive inline-flex max-w-full items-center gap-1 rounded-pill"
+            >
+              <span className="truncate">ARS • Datos de cuenta</span>
+              <Icon name="chevron-right" size="sm" />
+            </button>
+          </Caption>
         </Slide>
 
         <Slide label={PAGES[1].label} active={page === 1}>

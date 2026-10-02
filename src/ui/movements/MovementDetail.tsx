@@ -81,7 +81,16 @@ export function MovementDetail({ transaction: t, category, onClose }: MovementDe
             <Row label="Importe">{amount}</Row>
             <Row label="Moneda">{t.currency}</Row>
             <Row label="Categoría">{category?.name ?? '—'}</Row>
-            <Row label="Tipo de operación">{t.paymentMethod ? PAYMENT_LABEL[t.paymentMethod] : '—'}</Row>
+            <Row label="Tipo de operación">
+              {t.paymentMethod ? (
+                <span className="inline-flex items-center gap-2">
+                  <Icon name={t.paymentMethod === 'CASH' ? 'banknote' : 'transfer'} size="sm" className="text-fg-soft" />
+                  {PAYMENT_LABEL[t.paymentMethod]}
+                </span>
+              ) : (
+                '—'
+              )}
+            </Row>
             <Row label="País">
               <span className="inline-flex items-center gap-2">
                 <Flag country={t.country} size={18} />

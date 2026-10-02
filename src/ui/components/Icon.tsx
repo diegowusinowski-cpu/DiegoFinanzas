@@ -39,8 +39,25 @@ export type IconName =
   | 'store'
   | 'bag'
   | 'scholarship'
+  | 'banknote'
+  | 'transfer'
 
 const PATHS: Record<IconName, ReactNode> = {
+  /* Billete: rectángulo con círculo central y dos puntos en los costados. */
+  banknote: (
+    <>
+      <rect x="2.5" y="6" width="19" height="12" rx="2.5" />
+      <circle cx="12" cy="12" r="2.6" />
+      <path d="M6 12h.01M18 12h.01" />
+    </>
+  ),
+  /* Transferencia bancaria: flechas en sentidos opuestos. */
+  transfer: (
+    <>
+      <path d="M4 8h15M15.5 4.5 19 8l-3.5 3.5" />
+      <path d="M20 16H5M8.5 12.5 5 16l3.5 3.5" />
+    </>
+  ),
   home: <path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />,
   list: (
     <>

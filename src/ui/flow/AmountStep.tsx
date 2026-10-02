@@ -7,6 +7,7 @@ import {
   type Category,
   type Country,
   type MinorUnits,
+  type PaymentMethod,
   type TransactionType,
 } from '@/domain'
 import { Flag } from '../components/Flags'
@@ -18,6 +19,7 @@ import { AmountDisplay } from './AmountDisplay'
 import { COUNTRY_INFO, HOLDER_LABEL, TYPE_LABEL } from './flowModel'
 import { FlowHeader } from './FlowFrame'
 import { NumericKeypad } from './NumericKeypad'
+import { PaymentMethodChips } from './PaymentMethodChips'
 
 interface AmountStepProps {
   type: TransactionType
@@ -25,11 +27,13 @@ interface AmountStepProps {
   category: Category | undefined
   amountRaw: string
   concept: string
+  paymentMethod: PaymentMethod
   /** Saldo derivado en la moneda del país elegido. */
   balance: MinorUnits
   onChangeAmount(raw: string): void
   onChangeConcept(concept: string): void
   onChangeCountry(country: Country): void
+  onChangePaymentMethod(method: PaymentMethod): void
   onBack(): void
   onContinue(): void
 }
@@ -63,6 +67,12 @@ export function AmountStep(props: AmountStepProps) {
         <p className="text-body text-fg-muted">
           Vos {verb} {text} {currency}
         </p>
+        {/* Efectivo o transferencia: se elige acá, a la vista, y se puede cambiar en la confirmación. */}
+        <PaymentMethodChips
+          value={props.paymentMethod}
+          onChange={props.onChangePaymentMethod}
+          label={type === 'INCOME' ? '¿Cómo lo recibiste?' : '¿Cómo lo pagaste?'}
+        />
       </section>
 
       <div className="flex shrink-0 flex-col gap-4 pb-3">

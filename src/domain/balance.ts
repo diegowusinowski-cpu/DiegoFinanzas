@@ -24,3 +24,31 @@ export function computeBalance(
     0,
   )
 }
+
+export interface BalanceByMethod {
+  /** Lo que entró y salió en efectivo. */
+  cash: MinorUnits
+  /** Lo que entró y salió por transferencia. */
+  transfer: MinorUnits
+  /** Movimientos sin medio de pago (p. ej. los de préstamos): no se reparten entre efectivo y transferencia. */
+  other: MinorUnits
+  /** Efectivo + transferencia + otros: es el mismo saldo de siempre. */
+  total: MinorUnits
+}
+
+/** Saldo repartido por medio de pago (efectivo / transferencia). Mismo criterio que `computeBalance`. */
+export function computeBalanceByMethod(
+  transactions: readonly Transaction[],
+  currency: CurrencyCode = 'ARS',
+): BalanceByMethod {
+  const result: BalanceByMethod = { cash: 0, transfer: 0, other: 0, total: 0 }
+  for (const t of transactions) {
+    if (t.currency !== currency) continue
+    const effect = signedEffect(t)
+    if (t.paymentMethod === 'CASH') result.cash += effect
+    else if (t.paymentMethod === 'TRANSFER') result.transfer += effect
+    else result.other += effect
+    result.total += effect
+  }
+  return result
+}

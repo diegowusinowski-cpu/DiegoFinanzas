@@ -16,13 +16,14 @@ async function pin(page, digits) {
 }
 
 /** Flujo completo: país → Individual → tipo → monto → confirmar → confirmación → Home. */
-async function addMovement(page, kind, { amount, concept, category, date, method }) {
+async function addMovement(page, kind, { amount, concept, category, date, method, cashOnAmount }) {
   await page.getByRole('button', { name: kind, exact: true }).click()
   await page.getByRole('button', { name: /^Argentina/ }).click()
   await page.getByRole('button', { name: /^Individual/ }).click()
   await page.getByRole('main').getByRole('button', { name: new RegExp(`^${category}`) }).click()
   for (const ch of amount) await page.getByRole('button', { name: ch === ',' ? 'Coma decimal' : ch, exact: true }).click()
   if (concept) await page.getByLabel('Concepto').fill(concept)
+  if (cashOnAmount) await page.getByRole('radio', { name: 'Efectivo' }).click() // se elige en la pantalla del monto
   await page.getByRole('button', { name: 'Continuar' }).click()
   if (method) await page.getByRole('radio', { name: method }).click()
   if (date) await page.getByLabel('Fecha').fill(date)
@@ -303,11 +304,92 @@ async function run(name, device, { mockRate } = {}) {
   await context.close()
 }
 
+/** Efectivo: se elige en el monto, se ve en el desglose del saldo y el billete marca los movimientos. */
+async function runCash(name, device) {
+  await resetDatabase()
+  const context = await browser.newContext({ ...device, locale: 'es-AR', timezoneId: 'America/Argentina/Buenos_Aires' })
+  const page = await context.newPage()
+  const errors = []
+  page.on('pageerror', (e) => errors.push(String(e)))
+  page.on('console', (m) => m.type() === 'error' && !/Failed to load resource/.test(m.text()) && errors.push(m.text()))
+  await page.route('**/api/dolar-blue', (route) => route.fulfill({ status: 502, json: { error: 'source_unavailable' } }))
+  await page.route(/dolarapi\.com|bluelytics\.com\.ar/, (route) => route.abort())
+  await page.goto(BASE_URL)
+  await page.getByLabel('Número de teléfono').fill('11 2345 6789')
+  await page.getByRole('button', { name: 'Continuar' }).click()
+  await pin(page, '1234')
+  await pin(page, '1234')
+  await page.getByTestId('balance').waitFor()
+
+  await addMovement(page, 'Ingreso', { amount: '10000', concept: 'Sueldo', category: 'Trabajo en relación de dependencia' })
+  await addMovement(page, 'Ingreso', { amount: '2500', concept: 'Venta en mano', category: 'Trabajo en relación de dependencia', cashOnAmount: true })
+  await addMovement(page, 'Gasto', { amount: '500', concept: 'Kiosco', category: 'Transporte y movilidad', cashOnAmount: true })
+  assert.equal(await page.getByTestId('balance').textContent(), '$ 12.000,00')
+
+  // Pantalla del monto: sin desbordes y con las dos opciones a la vista.
+  await page.getByRole('button', { name: 'Gasto', exact: true }).click()
+  await page.getByRole('button', { name: /^Argentina/ }).click()
+  await page.getByRole('button', { name: /^Individual/ }).click()
+  await page.getByRole('main').getByRole('button', { name: /^Transporte/ }).click()
+  await page.getByRole('radio', { name: 'Efectivo' }).waitFor()
+  const overflowAmount = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+  assert.equal(overflowAmount, 0, 'sin scroll horizontal en el monto')
+  const keypad = await page.getByRole('button', { name: '5', exact: true }).boundingBox()
+  const viewportHeight = page.viewportSize().height
+  assert.ok(keypad && keypad.y + keypad.height <= viewportHeight, 'el teclado sigue a la vista')
+  await page.screenshot({ path: `${OUT}/${name}-cash-1-monto.png` })
+  await page.getByRole('button', { name: 'Volver' }).click()
+  await page.getByRole('button', { name: 'Volver' }).click()
+  await page.getByRole('button', { name: 'Volver' }).click()
+  await page.getByRole('button', { name: 'Cerrar' }).click()
+  await page.getByTestId('balance').waitFor()
+  log(`[${name}] Efectivo/Transferencia en la pantalla del monto, sin desbordes`)
+
+  // Desglose al tocar el saldo.
+  await page.getByTestId('balance').click()
+  const sheet = page.getByRole('dialog', { name: 'Saldo de cuenta' })
+  await sheet.waitFor()
+  assert.equal(await sheet.getByTestId('balance-cash').textContent(), '$ 2.000,00')
+  assert.equal(await sheet.getByTestId('balance-transfer').textContent(), '$ 10.000,00')
+  assert.equal(await sheet.getByTestId('balance-total').textContent(), '$ 12.000,00')
+  await page.screenshot({ path: `${OUT}/${name}-cash-2-saldo.png` })
+  await page.keyboard.press('Escape')
+  await sheet.waitFor({ state: 'detached' })
+  log(`[${name}] saldo de cuenta: efectivo $ 2.000, transferencia $ 10.000, total $ 12.000`)
+
+  // Billete en los movimientos (Inicio y Movimientos) solo en los de efectivo.
+  const latest = page.getByTestId('latest-movements').getByRole('listitem')
+  assert.equal(await page.getByTestId('latest-movements').getByRole('img', { name: 'Efectivo' }).count(), 2)
+  for (const el of await page.getByTestId('latest-movements').getByRole('img', { name: 'Efectivo' }).all()) {
+    const box = await el.boundingBox()
+    assert.ok(box && box.width > 8 && box.height > 8, 'el billete es visible en el Inicio')
+  }
+  assert.equal(await latest.filter({ hasText: 'Sueldo' }).getByRole('img', { name: 'Efectivo' }).count(), 0)
+  await page.screenshot({ path: `${OUT}/${name}-cash-3-inicio.png`, fullPage: true })
+  await page.getByRole('navigation', { name: 'Navegación principal' }).getByRole('button', { name: 'Movimientos' }).click()
+  await page.getByRole('button', { name: /Kiosco, Gasto de/ }).getByRole('img', { name: 'Efectivo' }).waitFor()
+  await page.waitForTimeout(500)
+  assert.equal(await page.getByRole('button', { name: /Sueldo, Ingreso de/ }).getByRole('img', { name: 'Efectivo' }).count(), 0)
+  // El billete tiene que verse de verdad (no quedar tapado por el texto recortado).
+  const badge = await page.getByRole('button', { name: /Kiosco, Gasto de/ }).getByRole('img', { name: 'Efectivo' }).boundingBox()
+  assert.ok(badge && badge.width > 8 && badge.height > 8, 'el billete es visible en Movimientos')
+  const overflowList = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+  assert.equal(overflowList, 0, 'sin scroll horizontal en Movimientos')
+  await page.screenshot({ path: `${OUT}/${name}-cash-4-movimientos.png` })
+  log(`[${name}] ícono de billete solo en los movimientos en efectivo (Inicio y Movimientos)`)
+  assert.deepEqual(errors, [], `errores de consola: ${errors.join(' | ')}`)
+  await context.close()
+}
+
 try {
   await run('android-360', { ...devices['Pixel 5'], viewport: { width: 360, height: 780 } })
   await run('iphone-390', { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }, { mockRate: true })
   await run('iphone-375', { ...devices['iPhone X'], viewport: { width: 375, height: 812 } }, { mockRate: true })
   await run('escritorio', { viewport: { width: 1280, height: 800 } }, { mockRate: true })
+  await runCash('cash-390', { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } })
+  await runCash('cash-375', { ...devices['iPhone X'], viewport: { width: 375, height: 812 } })
+  await runCash('cash-360', { ...devices['Pixel 5'], viewport: { width: 360, height: 780 } })
+  await runCash('cash-tablet', { ...devices['iPad (gen 7)'], viewport: { width: 768, height: 1024 } })
   console.log('\nE2E OK')
 } finally {
   await browser.close()

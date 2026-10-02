@@ -136,6 +136,8 @@ export function MovementFlow({ type, onClose }: MovementFlowProps) {
             onChangeAmount={(amountRaw) => patch({ amountRaw })}
             onChangeConcept={(concept) => patch({ concept })}
             onChangeCountry={(country) => patch({ country })}
+            paymentMethod={data.paymentMethod}
+            onChangePaymentMethod={(paymentMethod) => patch({ paymentMethod })}
             onBack={back}
             onContinue={() => setStep('confirm')}
           />

@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { useAuth } from '@/state/AuthContext'
 import { useFinance } from '@/state/FinanceContext'
-import { latestServices, type TransactionType } from '@/domain'
+import { computeBalanceByMethod, latestServices, type TransactionType } from '@/domain'
 import { BalanceCarousel } from '../components/BalanceCarousel'
 import { Wordmark } from '../components/Brand'
 import { Button } from '../components/Button'
 import { EmptyState, Skeleton } from '../components/Card'
 import { Icon } from '../components/Icon'
 import { MovementItem } from '../components/MovementItem'
+import { BalanceBreakdownSheet } from '../components/BalanceBreakdownSheet'
 import { UsdBalanceSheet } from '../components/UsdBalanceSheet'
 import { ReminderCard } from '../components/ReminderCards'
 import { SectionAction, SectionHeader } from '../components/SectionHeader'
@@ -28,6 +29,7 @@ export function DashboardScreen({ onNewTransaction, onNewReminder, onSeeAll }: D
   const { state: rateState } = useUsdBlueRate()
   const loading = finance.status === 'loading'
   const [usdOpen, setUsdOpen] = useState(false)
+  const [breakdown, setBreakdown] = useState<{ open: boolean; hidden: boolean }>({ open: false, hidden: false })
   const services = latestServices(finance.transactions, finance.categories, LATEST_SERVICES_LIMIT)
 
   return (
@@ -52,6 +54,7 @@ export function DashboardScreen({ onNewTransaction, onNewReminder, onSeeAll }: D
             rate={rateState}
             today={finance.today}
             onEditUsd={() => setUsdOpen(true)}
+            onOpenBreakdown={(hidden) => setBreakdown({ open: true, hidden })}
           />
 
           <section aria-label="Acciones principales" className="grid grid-cols-2 gap-2.5">
@@ -157,6 +160,12 @@ export function DashboardScreen({ onNewTransaction, onNewReminder, onSeeAll }: D
           const result = await finance.setUsdBalance(amount)
           return result.ok ? null : (result.error.message ?? 'No se pudo guardar.')
         }}
+      />
+      <BalanceBreakdownSheet
+        open={breakdown.open}
+        breakdown={computeBalanceByMethod(finance.transactions)}
+        hidden={breakdown.hidden}
+        onClose={() => setBreakdown((prev) => ({ ...prev, open: false }))}
       />
     </>
   )
